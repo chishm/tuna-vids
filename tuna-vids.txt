@@ -1,0 +1,27 @@
+Tuna-viDS by Chishm
+
+Controls:
+B - Play/Pause
+X - Toggle bottom backlight
+Left - increase video delay by one frame
+Right - decrease video delay by one frame
+
+Instructions:
+1) Copy tuna-viDS.nds to the root of your flash card or to
+   /DS/tuna-viDS/tuna-viDS.nds or to
+   /data/tuna-viDS/tuna-viDS.nds
+2) DLDI patch tuna-open.nds and copy it to your flash card
+3) Run tuna-open.nds
+4) Select an AVI file to play
+
+Thanks to:
+Xvid team for writing the Xvid codec
+Christoph Lampert for video playback example
+ThomasS, LiraNuna, strager & DarkEz for Helix MP3 decoder port
+Noda for some MP3 player ideas
+abraxas for giving me the idea to port Xvid to the DS
+Ferrie for the GUI's skin.
+
+License:
+The ARM9 binary is licensed under GPL v2.
+The ARM7 binary is licensed under GPL v2 and RealNetworks Public Source License.

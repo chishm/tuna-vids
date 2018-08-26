@@ -6,7 +6,7 @@
 #ifndef __SOUND7_H__
 #define __SOUND7_H__
 
-#define SNDMIXER_BUFFER_SIZE (2 * MAX_NCHAN * MAX_NGRAN * MAX_NSAMP)
+#define SNDMIXER_BUFFER_SIZE (4 * MAX_NCHAN * MAX_NGRAN * MAX_NSAMP)
 
 typedef struct
 {
@@ -20,6 +20,7 @@ typedef struct
 	// Sample info
 	u32 smpPos, smpRate;
 	s32 curTimer, lstTimer;
+	int numChannels;
 		
 	// AVI buffer
 	u8* aviBufStart;
@@ -35,7 +36,8 @@ typedef struct
 	MP3FrameInfo mp3FrameInfo;
 	HMP3Decoder hMP3Decoder;
 		
-	s16	*mixBuffer;
+	s16	*mixBufferL;
+	s16	*mixBufferR;
 	s16 *musicBuf;
 		
 	int nMusicBuf, nMusicBufStart;
@@ -48,11 +50,11 @@ void SoundSetTimer(int period);
 void SoundStopPlayback();
 void SoundVolume(u32 volume);
 void SoundMix(int smpCount);
-void SoundMixCallback(s16* stream, u32 numsamples);
+void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount);
 void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain);
 void SoundPlayMP3(void);
 void SoundPauseMP3(void);
-//void deinterleave (s16* leftStream, s16* rightStream, s16* inBuffer, int samplesPerChan);
+void deinterleaveStereo (s16* streamL, s16* streamR, const u32* inBuffer, int smpCount);
 
 
 #endif

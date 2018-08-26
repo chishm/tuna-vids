@@ -16,13 +16,12 @@ export TOPDIR		:=	$(CURDIR)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all: $(TARGET).ds.gba
-
-$(TARGET).ds.gba	: $(TARGET).nds
+all: $(TARGET).nds
 
 #---------------------------------------------------------------------------------
 $(TARGET).nds	:	$(TARGET).arm7 $(TARGET).arm9
-	ndstool	-c $(TARGET).nds -7 $(TARGET).arm7 -9 $(TARGET).arm9
+	ndstool	-c $(TARGET).nds -7 $(TARGET).arm7 -9 $(TARGET).arm9 \
+			-b $(CURDIR)/icon.bmp "Tuna-viDS;AVI (Xvid+MP3) player;Created by Chishm"
 	dlditool mpcf.dldi $(TARGET).nds
 
 #---------------------------------------------------------------------------------

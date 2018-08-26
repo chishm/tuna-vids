@@ -114,8 +114,8 @@ int main(int argc, char ** argv) {
 
 	irqInit();
 
-	// Start the RTC tracking IRQ
-	initClockIRQ();
+	// Start the RTC tracking IRQ -- Not using RTC, so disable it.
+	// initClockIRQ();
 
 	SetYtrigger(80);
 	irqSet(IRQ_VCOUNT, VcountHandler);

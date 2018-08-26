@@ -54,8 +54,9 @@ void SoundInit()
 	SOUND_BIAS = 0x200;
 		
 	// Allocate buffers
-	mixerInfo.mixBuffer = malloc (2 * SNDMIXER_BUFFER_SIZE);
-	mixerInfo.musicBuf = malloc(2 * SNDMIXER_BUFFER_SIZE);
+	mixerInfo.mixBufferL = malloc (sizeof(s16) * SNDMIXER_BUFFER_SIZE);
+	mixerInfo.mixBufferR = malloc (sizeof(s16) * SNDMIXER_BUFFER_SIZE);
+	mixerInfo.musicBuf = malloc(sizeof(s16) * SNDMIXER_BUFFER_SIZE);
 
 	// Init sound
 	SoundSetTimer(0);
@@ -96,9 +97,10 @@ void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain)
 	mixerInfo.lstTimer = 0;
 	mixerInfo.nMusicBuf = 0;
 	mixerInfo.nMusicBufStart = 0;
+	mixerInfo.numChannels = 1;
 		
 	// Decode 1 / 2 of the buffersize
-	SoundMixCallback(mixerInfo.mixBuffer, DECODE_AHEAD_LENGTH);
+	SoundMixCallback(mixerInfo.mixBufferL, mixerInfo.mixBufferR, DECODE_AHEAD_LENGTH);
 	mixerInfo.smpPos = DECODE_AHEAD_LENGTH;
 		
 	// Set the right rate, ...
@@ -106,7 +108,7 @@ void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain)
 	mixerInfo.smpRate = mixerInfo.mp3FrameInfo.samprate;
 //	mixerInfo.curTimer = 0x1000000 / mixerInfo.smpRate;
 	mixerInfo.curTimer = 0xFFB0FF / mixerInfo.smpRate;
-	
+
 	ipcSend(CMDFIFO9_MP3_READY);
 	ipcSend(mixerInfo.smpRate);
 }
@@ -139,14 +141,14 @@ void SoundLoopStep()
 			// Left channel
 			SCHANNEL_CR(0)				= 0;
 			SCHANNEL_TIMER(0)			= 0x10000 - mixerInfo.curTimer;
-			SCHANNEL_SOURCE(0)			= (u32)mixerInfo.mixBuffer;
+			SCHANNEL_SOURCE(0)			= (u32)mixerInfo.mixBufferL;
 			SCHANNEL_REPEAT_POINT(0)	= 0;
 			SCHANNEL_LENGTH(0)			= mixerInfo.bufSize >> 1;
 			
 			// Right channel
 			SCHANNEL_CR(1)				= 0;
 			SCHANNEL_TIMER(1)			= 0x10000 - mixerInfo.curTimer;
-			SCHANNEL_SOURCE(1)			= (u32)mixerInfo.mixBuffer;
+			SCHANNEL_SOURCE(1)			= (u32)mixerInfo.mixBufferR;
 			SCHANNEL_REPEAT_POINT(1)	= 0;
 			SCHANNEL_LENGTH(1)			= mixerInfo.bufSize >> 1;
 			
@@ -196,13 +198,16 @@ void SoundLoopStep()
 			// Adjust data so that playback starts from the begining of the buffer
 			if (mixerInfo.smpPos >= DECODE_AHEAD_LENGTH) {
 				int offset = mixerInfo.smpPos - DECODE_AHEAD_LENGTH;
-				memmove (mixerInfo.mixBuffer, mixerInfo.mixBuffer + offset, DECODE_AHEAD_LENGTH);
+				memmove (mixerInfo.mixBufferL, mixerInfo.mixBufferL + offset, DECODE_AHEAD_LENGTH);
+				memmove (mixerInfo.mixBufferR, mixerInfo.mixBufferR + offset, DECODE_AHEAD_LENGTH);
 				mixerInfo.smpPos -= offset;
 			} else {	
 				int offset = mixerInfo.smpPos + DECODE_AHEAD_LENGTH;
 				int endLength = mixerInfo.bufSize - offset;
-				memmove (mixerInfo.mixBuffer + endLength, mixerInfo.mixBuffer, DECODE_AHEAD_LENGTH - endLength);
-				memmove (mixerInfo.mixBuffer, mixerInfo.mixBuffer + offset, endLength);
+				memmove (mixerInfo.mixBufferL + endLength, mixerInfo.mixBufferL, DECODE_AHEAD_LENGTH - endLength);
+				memmove (mixerInfo.mixBufferL, mixerInfo.mixBufferL + offset, endLength);
+				memmove (mixerInfo.mixBufferR + endLength, mixerInfo.mixBufferR, DECODE_AHEAD_LENGTH - endLength);
+				memmove (mixerInfo.mixBufferR, mixerInfo.mixBufferR + offset, endLength);
 				mixerInfo.smpPos += endLength;
 			}
 			mixerInfo.lstTimer = 0;
@@ -232,7 +237,7 @@ void SoundLoopStep()
 	}
 }
 
-void SoundMixCallback(s16* stream, u32 smpCount)
+void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 {
 	int restSample, minSamples, usedBytes;
 	int outSample = 0;
@@ -240,14 +245,21 @@ void SoundMixCallback(s16* stream, u32 smpCount)
     u8* aid_readPtr;
     int aid_bytesLeft;
 	int error = 0;
-		
-		// Fill buffered data into stream
+	
+	// Fill buffered data into stream
 	minSamples = min(mixerInfo.nMusicBuf, smpCount);
 	if(minSamples > 0) {
-			// Copy data from musicBuf to stream
+		// Copy data from musicBuf to stream
 		smpCount -= minSamples;
-		memcpy(stream + outSample, mixerInfo.musicBuf + mixerInfo.nMusicBufStart, minSamples * sizeof(s16));
-		outSample += minSamples;
+		
+		if (mixerInfo.numChannels == 2) {
+			deinterleaveStereo (streamL, streamR, ((u32*)mixerInfo.musicBuf) + mixerInfo.nMusicBufStart, minSamples);
+ 		} else {
+ 			memcpy(streamL + outSample, mixerInfo.musicBuf + mixerInfo.nMusicBufStart, minSamples * sizeof(s16));
+ 			memcpy(streamR + outSample, mixerInfo.musicBuf + mixerInfo.nMusicBufStart, minSamples * sizeof(s16));
+ 		}
+
+ 		outSample += minSamples;
 			
 		mixerInfo.nMusicBufStart += minSamples;
 		mixerInfo.nMusicBuf -= minSamples;
@@ -258,7 +270,7 @@ void SoundMixCallback(s16* stream, u32 smpCount)
 		}
 	}
 
-		// Still more data needed?
+	// Still more data needed?
 	if(smpCount > 0) {
 		while(smpCount > 0) {
 			// More data is needed. Decode a mp3 frame to outBuf
@@ -294,28 +306,39 @@ void SoundMixCallback(s16* stream, u32 smpCount)
 				
 			// Copy needed data to the stream
 			MP3GetLastFrameInfo(mixerInfo.hMP3Decoder, &mixerInfo.mp3FrameInfo);
+			mixerInfo.numChannels = mixerInfo.mp3FrameInfo.nChans;		// Stereo or mono?
+			if (mixerInfo.numChannels == 2) {
+				mixerInfo.mp3FrameInfo.outputSamps /= 2;
+			}
 			minSamples = min(mixerInfo.mp3FrameInfo.outputSamps, smpCount);
 			restSample = mixerInfo.mp3FrameInfo.outputSamps - smpCount;
-			smpCount -= minSamples;
+			smpCount -= minSamples;		
 				
-			memcpy(stream + outSample, mixerInfo.musicBuf, minSamples * sizeof(s16));
-			outSample += minSamples;
+			
+			if (mixerInfo.numChannels == 2) {
+		 		deinterleaveStereo (streamL + outSample, streamR + outSample, (u32*)mixerInfo.musicBuf, minSamples);
+			} else {
+				memcpy(streamL + outSample, mixerInfo.musicBuf, minSamples * sizeof(s16));
+				memcpy(streamR + outSample, mixerInfo.musicBuf, minSamples * sizeof(s16));
+			}
+
+ 			outSample += minSamples;
 		}
-			// Set the rest of the decoded data to be used for the next frame
+		// Set the rest of the decoded data to be used for the next frame
 		mixerInfo.nMusicBufStart = minSamples;
 		mixerInfo.nMusicBuf = restSample;
 	}
 }
 
-	// Manages the filling of the ring buffer.
+// Manages the filling of the ring buffer.
 void SoundMix(int smpCount)
 {
-		// Decode data to the ring buffer
-	if((mixerInfo.smpPos + smpCount) >= mixerInfo.bufSize) {
-		SoundMixCallback(&mixerInfo.mixBuffer[mixerInfo.smpPos], mixerInfo.bufSize - mixerInfo.smpPos);
-		SoundMixCallback(mixerInfo.mixBuffer, smpCount - (mixerInfo.bufSize - mixerInfo.smpPos));
+	// Decode data to the ring buffer
+ 	if (mixerInfo.bufSize - mixerInfo.smpPos <= smpCount) {
+ 		SoundMixCallback(&mixerInfo.mixBufferL[mixerInfo.smpPos], &mixerInfo.mixBufferR[mixerInfo.smpPos], mixerInfo.bufSize - mixerInfo.smpPos);
+ 		SoundMixCallback(&mixerInfo.mixBufferL[0], &mixerInfo.mixBufferR[0], smpCount - (mixerInfo.bufSize - mixerInfo.smpPos));
 	} else {
-		SoundMixCallback(&mixerInfo.mixBuffer[mixerInfo.smpPos], smpCount);
+		SoundMixCallback(&mixerInfo.mixBufferL[mixerInfo.smpPos], &mixerInfo.mixBufferR[mixerInfo.smpPos], smpCount);
 	}
 }
 

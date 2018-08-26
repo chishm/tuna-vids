@@ -28,7 +28,7 @@ const ControlBounds controlLight = {192,64,239,95};
  ****************************************************************************/
 
 /* init decoder before first run */
-static int dec_init()
+static int dec_init(int frameWidth, int frameHeight)
 {
 	int ret;
 
@@ -64,8 +64,8 @@ static int dec_init()
 	 * Image dimensions -- set to 0, xvidcore will resize when ever it is
 	 * needed
 	 */
-	xvid_dec_create.width = 256;
-	xvid_dec_create.height = 192;
+	xvid_dec_create.width = frameWidth;
+	xvid_dec_create.height = frameHeight;
 
 	ret = xvid_decore(NULL, XVID_DEC_CREATE, &xvid_dec_create, NULL);
 
@@ -106,7 +106,7 @@ static int dec_main(unsigned char *istream,  unsigned char *ostream, int istream
 }
 
 /* close decoder to release resources */
-static int dec_end() {
+static int dec_end(void) {
 	int result = xvid_decore(dec_handle, XVID_DEC_DESTROY, NULL, NULL);
 	dec_handle = NULL;
 	return result;
@@ -189,13 +189,13 @@ static void seekVideo (int offset, bool paused) {
 	flush_video();
 	// Jump to desired location in file. There are 2 chunks per frame, one for audio, one for video
 	aviSeekOffset (offset);
-	// Start playing
+	// Start playing video, but it won't actually play until the audio is started too
 	vidBuf_ClearFutureBuffers();
 	cue_video();
 	mp3PlayerStart();
 	vidBuf_StartVideo();
 	if (paused) {
-		// Stop playback, but keeps the video queued-up
+		// Stop playback, but keep the video queued-up
 		vidBuf_StopVideo();
 		cue_video();
 	} else {
@@ -280,7 +280,7 @@ int play_movie (FILE* aviFile) {
  *        XviD PART  Start
  ****************************************************************************/
 
-	status = dec_init();
+	status = dec_init(frameWidth, frameHeight);
 	if (status) {
 		iprintf("Decore INIT problem, return value %d\n", status);
 		goto release_all;

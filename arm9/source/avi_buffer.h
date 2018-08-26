@@ -17,7 +17,7 @@
 
 typedef struct {
 	u8*	start;
-	u32	size;
+	int	size;
 } AviDataChunk;
 
 typedef struct {

@@ -1,25 +1,23 @@
 /*---------------------------------------------------------------------------------
-	$Id: template.c,v 1.4 2005/09/17 23:15:13 wntrmute Exp $
+  Tuna-viDS -- AVI + Xvid + MP3 player for Nintendo DS
 
-	Basic Hello World
+  Copyright(C) 2007-2008 Michael "Chishm" Chisholm
 
-	$Log: template.c,v $
-	Revision 1.4  2005/09/17 23:15:13  wntrmute
-	corrected iprintAt in templates
-	
-	Revision 1.3  2005/09/05 00:32:20  wntrmute
-	removed references to IPC struct
-	replaced with API functions
-	
-	Revision 1.2  2005/08/31 01:24:21  wntrmute
-	updated for new stdio support
+  This program is free software ; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation ; either version 2 of the License, or
+  (at your option) any later version.
 
-	Revision 1.1  2005/08/03 06:29:56  wntrmute
-	added templates
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-
+  You should have received a copy of the GNU General Public License
+  along with this program ; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ---------------------------------------------------------------------------------*/
-#include "nds.h"
+#include <nds.h>
 #include <nds/arm9/console.h> //basic print funcionality
 #include <stdio.h>
 #include <string.h>
@@ -34,9 +32,8 @@
 
 const char *DEFAULTFILE = "fat:/tuna-vids.avi";
 
-//---------------------------------------------------------------------------------
-int main(int argc, const char* argv[]) {
-//---------------------------------------------------------------------------------
+int main(int argc, const char* argv[]) 
+{
 	FILE* aviFile = NULL;
 	const char* aviFileName;
 	
@@ -57,16 +54,13 @@ int main(int argc, const char* argv[]) {
 
 
 	iprintf("\n");
-	iprintf("tuna-viDS\n");
+	iprintf("Tuna-viDS v1.1\n");
 	iprintf("\n");
-	iprintf("xvid player by\n");
-	iprintf("Michael Chisholm (Chishm) 2007\n");
-	iprintf("Based on xvid_decraw written by\n");
-	iprintf("Christoph Lampert 2002-2003\n");
-	iprintf("MP3 playback code contributed by");
-	iprintf("ThomasS, LiraNuna\n");
-	iprintf("strager & DarkEz\n");
-	iprintf("Skin by Ferrie\n");
+	iprintf("AVI + Xvid + MP3 player by\n");
+	iprintf("Michael Chisholm (Chishm)\n");
+	iprintf("\n");
+	iprintf("See documentation for a \n");
+	iprintf("full list of credits.\n");
 	
 	powerSET (POWER_ALL_2D);
 	lcdMainOnTop ();
@@ -109,4 +103,3 @@ int main(int argc, const char* argv[]) {
 	
 	return 0;
 }
-

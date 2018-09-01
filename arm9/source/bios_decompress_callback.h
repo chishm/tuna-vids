@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 #include <nds/bios.h>
-#include <nds/jtypes.h>
+#include <nds/ndstypes.h>
 
 extern TDecompressionStream decompressBiosCallback;
 

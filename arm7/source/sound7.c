@@ -1,12 +1,12 @@
 #include "sound7.h"
-		
+
 tMixerInfo mixerInfo = {0};
 
 #define DECODE_AHEAD_LENGTH (mixerInfo.bufSize >> 1)
 
 void SoundNextAviChunk (void) {
 	AviChunkHeader aviChunkHeader;
-	
+
 	// Scan forward in AVI buffer for next audio data chunk
 	do {
 		mixerInfo.mp3ChunkAddr += mixerInfo.mp3ChunkSize;
@@ -43,16 +43,16 @@ static void SoundUsedAmount (int amount) {
 	}
 	if (mixerInfo.mp3BufRemain <= 0) {
 		SoundNextAviChunk();
-	} 
+	}
 }
 
 void SoundInit()
 {
 	// Enable Sound
-	powerON(POWER_SOUND);
-	SOUND_CR = SOUND_ENABLE | SOUND_VOL(127);
-	SOUND_BIAS = 0x200;
-		
+	REG_SOUNDCNT = SOUND_ENABLE;
+	REG_MASTER_VOLUME = 127;
+	REG_SOUNDBIAS = 0x200;
+
 	// Allocate buffers
 	mixerInfo.mixBufferL = malloc (sizeof(s16) * SNDMIXER_BUFFER_SIZE);
 	mixerInfo.mixBufferR = malloc (sizeof(s16) * SNDMIXER_BUFFER_SIZE);
@@ -60,10 +60,10 @@ void SoundInit()
 
 	// Init sound
 	SoundSetTimer(0);
-		
+
 	// Init the helix mp3 decoder
 	mixerInfo.hMP3Decoder = MP3InitDecoder();
-		
+
 	// Adjust settings
 	mixerInfo.curState = SNDSTATE_IDLE;
 	mixerInfo.bufSize = SNDMIXER_BUFFER_SIZE;
@@ -77,12 +77,12 @@ void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain)
 	mixerInfo.aviBufSize = aviBufLen;
 	mixerInfo.mp3ChunkAddr = aviBuffer + aviBufPos;
 	mixerInfo.aviRemain = aviRemain;
-	
+
 	memcpy (&aviChunkHeader, mixerInfo.mp3ChunkAddr, sizeof (AviChunkHeader));
 	mixerInfo.mp3ChunkSize = ((aviChunkHeader.size + 1) & ~1) + sizeof(AviChunkHeader);
 
 	mixerInfo.totalUsed = 0;
-	
+
 	if (aviChunkHeader.fourcc == LIST_ID) {
 		mixerInfo.mp3ChunkSize = sizeof(AviListHeader);
 		SoundNextAviChunk ();
@@ -92,17 +92,17 @@ void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain)
 	} else {
 		SoundNextAviChunk ();
 	}
-	
+
 	mixerInfo.smpPos = 0;
 	mixerInfo.lstTimer = 0;
 	mixerInfo.nMusicBuf = 0;
 	mixerInfo.nMusicBufStart = 0;
 	mixerInfo.numChannels = 1;
-		
+
 	// Decode 1 / 2 of the buffersize
 	SoundMixCallback(mixerInfo.mixBufferL, mixerInfo.mixBufferR, DECODE_AHEAD_LENGTH);
 	mixerInfo.smpPos = DECODE_AHEAD_LENGTH;
-		
+
 	// Set the right rate, ...
 	MP3GetLastFrameInfo(mixerInfo.hMP3Decoder, &mixerInfo.mp3FrameInfo);
 	mixerInfo.smpRate = mixerInfo.mp3FrameInfo.samprate;
@@ -123,7 +123,7 @@ void SoundPauseMP3(void) {
 	mixerInfo.mixState = SNDMIXER_PAUSE;
 }
 
-void SoundStopPlayback(void) 
+void SoundStopPlayback(void)
 {
 	mixerInfo.mixState = SNDMIXER_STOP;
 }
@@ -144,33 +144,33 @@ void SoundLoopStep()
 			SCHANNEL_SOURCE(0)			= (u32)mixerInfo.mixBufferL;
 			SCHANNEL_REPEAT_POINT(0)	= 0;
 			SCHANNEL_LENGTH(0)			= mixerInfo.bufSize >> 1;
-			
+
 			// Right channel
 			SCHANNEL_CR(1)				= 0;
 			SCHANNEL_TIMER(1)			= 0x10000 - mixerInfo.curTimer;
 			SCHANNEL_SOURCE(1)			= (u32)mixerInfo.mixBufferR;
 			SCHANNEL_REPEAT_POINT(1)	= 0;
 			SCHANNEL_LENGTH(1)			= mixerInfo.bufSize >> 1;
-			
+
 			SoundSetTimer(mixerInfo.curTimer);
-			SCHANNEL_CR(0)				= SCHANNEL_ENABLE | SOUND_REPEAT | SOUND_VOL(127) | SOUND_PAN(0) | SOUND_16BIT;
-			SCHANNEL_CR(1)				= SCHANNEL_ENABLE | SOUND_REPEAT | SOUND_VOL(127) | SOUND_PAN(127) | SOUND_16BIT;
-			
+			SCHANNEL_CR(0)				= SCHANNEL_ENABLE | SOUND_REPEAT | SOUND_VOL(127) | SOUND_PAN(0) | SOUND_FORMAT_16BIT;
+			SCHANNEL_CR(1)				= SCHANNEL_ENABLE | SOUND_REPEAT | SOUND_VOL(127) | SOUND_PAN(127) | SOUND_FORMAT_16BIT;
+
 			mixerInfo.mixState = SNDMIXER_STREAMING;
 		} break;
 		case SNDMIXER_STREAMING: {
 			s32 curTimer = TIMER1_DATA;
 			s32 smpCount = curTimer - mixerInfo.lstTimer;
-				
+
 			smpCount += (smpCount < 0) << 16;
-			
+
 			ipcSend(CMDFIFO9_MP3_SAMPLES);
 			ipcSend(smpCount);
-			
+
 			mixerInfo.lstTimer = curTimer;
-				
+
 			SoundMix(smpCount);
-				
+
 			mixerInfo.smpPos += smpCount;
 			mixerInfo.smpPos %= mixerInfo.bufSize;
 		} break;
@@ -182,26 +182,26 @@ void SoundLoopStep()
 			SCHANNEL_CR(0) = 0;
 			SCHANNEL_CR(1) = 0;
 			SoundSetTimer(0);
-			
+
 			smpCount += (smpCount < 0) << 16;
-			
+
 			ipcSend(CMDFIFO9_MP3_SAMPLES);
 			ipcSend(smpCount);
-			
+
 			mixerInfo.lstTimer = curTimer;
-				
+
 			SoundMix(smpCount);
-				
+
 			mixerInfo.smpPos += smpCount;
 			mixerInfo.smpPos %= mixerInfo.bufSize;
-			
+
 			// Adjust data so that playback starts from the begining of the buffer
 			if (mixerInfo.smpPos >= DECODE_AHEAD_LENGTH) {
 				int offset = mixerInfo.smpPos - DECODE_AHEAD_LENGTH;
 				memmove (mixerInfo.mixBufferL, mixerInfo.mixBufferL + offset, DECODE_AHEAD_LENGTH);
 				memmove (mixerInfo.mixBufferR, mixerInfo.mixBufferR + offset, DECODE_AHEAD_LENGTH);
 				mixerInfo.smpPos -= offset;
-			} else {	
+			} else {
 				int offset = mixerInfo.smpPos + DECODE_AHEAD_LENGTH;
 				int endLength = mixerInfo.bufSize - offset;
 				memmove (mixerInfo.mixBufferL + endLength, mixerInfo.mixBufferL, DECODE_AHEAD_LENGTH - endLength);
@@ -211,7 +211,7 @@ void SoundLoopStep()
 				mixerInfo.smpPos += endLength;
 			}
 			mixerInfo.lstTimer = 0;
-			
+
 			mixerInfo.mixState = SNDMIXER_IDLE;
 			mixerInfo.curState = SNDSTATE_IDLE;
 
@@ -221,11 +221,11 @@ void SoundLoopStep()
 		case SNDMIXER_STOP: {
 			u8* aid_readPtr = mixerInfo.mp3BufAddr;
 			int aid_bytesLeft = 0;
-			
+
 			SCHANNEL_CR(0) = 0;
 			SCHANNEL_CR(1) = 0;
 			SoundSetTimer(0);
-			
+
 			// Reset MP3 decoder
 			MP3Decode(mixerInfo.hMP3Decoder, &aid_readPtr, &aid_bytesLeft, mixerInfo.musicBuf, 0);
 			mixerInfo.mixState = SNDMIXER_IDLE;
@@ -241,17 +241,17 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 {
 	int restSample, minSamples, usedBytes;
 	int outSample = 0;
-    
+
     u8* aid_readPtr;
     int aid_bytesLeft;
 	int error = 0;
-	
+
 	// Fill buffered data into stream
 	minSamples = min(mixerInfo.nMusicBuf, smpCount);
 	if(minSamples > 0) {
 		// Copy data from musicBuf to stream
 		smpCount -= minSamples;
-		
+
 		if (mixerInfo.numChannels == 2) {
 			deinterleaveStereo (streamL, streamR, ((u32*)mixerInfo.musicBuf) + mixerInfo.nMusicBufStart, minSamples);
  		} else {
@@ -260,10 +260,10 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
  		}
 
  		outSample += minSamples;
-			
+
 		mixerInfo.nMusicBufStart += minSamples;
 		mixerInfo.nMusicBuf -= minSamples;
-			
+
 		if(mixerInfo.nMusicBuf <= 0) {
 			mixerInfo.nMusicBufStart = 0;
 			mixerInfo.nMusicBuf = 0;
@@ -286,10 +286,10 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 				return;
 			}
 			SoundUsedAmount(usedBytes);
-			
+
             aid_readPtr = mixerInfo.mp3BufAddr;
             aid_bytesLeft  = mixerInfo.mp3BufRemain;
-            
+
 			// Decode one MP3 frame to the buffer
 			if ((error = MP3Decode(mixerInfo.hMP3Decoder, &aid_readPtr, &aid_bytesLeft, mixerInfo.musicBuf, 0))) {
 #ifdef REPORT_ARM7_ERRORS
@@ -300,10 +300,10 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 //				mixerInfo.curState = SNDSTATE_ERROR;
 //				return;
 			}
-            
+
 			usedBytes = aid_readPtr - mixerInfo.mp3BufAddr;
 			SoundUsedAmount(usedBytes);
-				
+
 			// Copy needed data to the stream
 			MP3GetLastFrameInfo(mixerInfo.hMP3Decoder, &mixerInfo.mp3FrameInfo);
 			mixerInfo.numChannels = mixerInfo.mp3FrameInfo.nChans;		// Stereo or mono?
@@ -312,9 +312,9 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 			}
 			minSamples = min(mixerInfo.mp3FrameInfo.outputSamps, smpCount);
 			restSample = mixerInfo.mp3FrameInfo.outputSamps - smpCount;
-			smpCount -= minSamples;		
-				
-			
+			smpCount -= minSamples;
+
+
 			if (mixerInfo.numChannels == 2) {
 		 		deinterleaveStereo (streamL + outSample, streamR + outSample, (u32*)mixerInfo.musicBuf, minSamples);
 			} else {
@@ -347,13 +347,13 @@ void SoundSetTimer(int period)
 	if(period) {
 		TIMER1_DATA = 0;
 		TIMER1_CR = TIMER_ENABLE | TIMER_CASCADE | TIMER_DIV_1;
-		
+
 		TIMER0_DATA = 0x10000 - (period << 1);
 		TIMER0_CR = TIMER_ENABLE | TIMER_DIV_1;
 	} else {
 		TIMER0_DATA = 0;
 		TIMER0_CR = 0;
-			
+
 		TIMER1_DATA = 0;
 		TIMER1_CR = 0;
 	}

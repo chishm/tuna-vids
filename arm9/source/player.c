@@ -113,7 +113,7 @@ static int dec_end(void) {
 }
 
 
-/* Move the video up to the first frame of the next second, 
+/* Move the video up to the first frame of the next second,
 or just start at the current frame if at the start of the video (frame 0)
 returns the second it's up to, or -1 on error
 */
@@ -130,7 +130,7 @@ static bool cue_video (void) {
 		int used_bytes = 0;
 
 		frameBuffer = vidBuf_GetNextDecodeBuffer();
-		
+
 		/* This loop is needed to handle VOL/NVOP reading */
 		do {
 			/* Decode frame */
@@ -145,7 +145,7 @@ static bool cue_video (void) {
 		} while (xvid_dec_stats.type <= 0 && aviBuffer.videoAmountLeft >= MIN_USEFUL_BYTES);
 		vidBuf_CurrentDecodeComplete ();
 	} while (vidBuf_NumFreeDecodeBuffers() > 0 && aviBuffer.videoAmountLeft >= MIN_USEFUL_BYTES && nextFrameData.size > 0);
-	
+
 	if (vidBuf_NumFreeDecodeBuffers() > 0 || nextFrameData.size <= 0) {
 		return false;
 	}
@@ -173,7 +173,7 @@ static void flush_video (void) {
 			vidBuf_CurrentDecodeComplete ();
 		}
 	} while (used_bytes >= 0);
-	
+
 	return;
 }
 
@@ -214,7 +214,7 @@ static bool videoLoopStep (void) {
 
 	if (vidBuf_NumFreeDecodeBuffers() > 0) {
 		frameBuffer = vidBuf_GetNextDecodeBuffer();
-		
+
 		/* This loop is needed to handle VOL/NVOP reading */
 		do {
 			/* Decode frame */
@@ -222,14 +222,14 @@ static bool videoLoopStep (void) {
 			used_bytes = dec_main(nextFrameData.start, frameBuffer, nextFrameData.size, &xvid_dec_stats);
 			if (used_bytes >= 0) {
 				aviVideoUsedAmount (used_bytes);
-			} 
+			}
 		} while (xvid_dec_stats.type <= 0 && aviBuffer.videoAmountLeft >= MIN_USEFUL_BYTES && nextFrameData.size > 0);
 
 		/* Check if there is a negative number of useful bytes left in buffer
 		 * This means we went too far */
 		if(aviBuffer.videoAmountLeft < 0 || nextFrameData.size <= 0)
 			return false;
-		
+
 		vidBuf_CurrentDecodeComplete ();
 
 	} else if (aviBuffer.videoAmountLeft < AVI_BUFFER_SIZE) {
@@ -237,7 +237,7 @@ static bool videoLoopStep (void) {
 	} else {
 		swiWaitForVBlank();
 	}
-	
+
 	return true;
 }
 
@@ -250,7 +250,7 @@ int play_movie (FILE* aviFile) {
 	int frameRateHz, oldVblanks;
 	int audioDelay = 0;
 	int framesShownOffset = 0;
-	
+
 	/* Memory for encoded m4v stream */
 	vidBuf_StopVideo ();
 	if (!aviBufferInit (aviFile, &frameWidth, &frameHeight, &frameRate, &numFrames)) {
@@ -262,20 +262,20 @@ int play_movie (FILE* aviFile) {
 	vidBuf_AdjustDelay (audioDelay);
 	vidBuf_SetFrameRate (frameRate);
 	vidBuf_SetHeight (frameHeight);
-	
+
 	if (frameWidth != SCREEN_WIDTH) {
 		iprintf ("Video is not 256px wide!\n");
 	}
-	
+
 	if (frameHeight > SCREEN_HEIGHT) {
 		iprintf ("Video too tall!\n");
 	}
 
-	
+
 	/* Memory for encoded mp3 stream */
 	mp3PlayerStart();
 
-   
+
 /*****************************************************************************
  *        XviD PART  Start
  ****************************************************************************/
@@ -296,7 +296,7 @@ int play_movie (FILE* aviFile) {
 		iprintf("Not enough video data\n");
 		goto release_all;
 	}
-	
+
 	// Now that it's passed all points where an error will be reported, initialise
 	// the GUI, removing the text display
 	controlsSetup();
@@ -309,17 +309,18 @@ int play_movie (FILE* aviFile) {
 	mp3PlayerLoop();
 	vidBuf_StartVideo();
 	mp3PlayerPlay(true);
-	
+
 	videoPlaying = true;
-	
+
 	while (videoPlaying && aviBuffer.videoAmountLeft >= MIN_USEFUL_BYTES && (paused || !mp3PlayerHasEnded())) {
 		// Handle requests for MP3 stuff
 		mp3PlayerLoop();
-		
-		touchPosition penPos = touchReadXY();
+
+		touchPosition penPos;
+		touchRead(&penPos);
 		scanKeys();
 		uint32 keys = keysDown();
-		
+
 		if ((keys & KEY_LEFT) || hitCheck (&penPos, &controlFpsMinus, keys)) {
 			// Pause for a frame
 			--audioDelay;
@@ -349,7 +350,7 @@ int play_movie (FILE* aviFile) {
 		} else {
 			videoPlaying = videoLoopStep();
 		}
-		
+
 		if ((vidBuf_vblanks - oldVblanks >= UPDATE_PERIOD) || keys != 0)  {
 			oldVblanks = vidBuf_vblanks;
 			// Update display
@@ -372,7 +373,7 @@ int play_movie (FILE* aviFile) {
 	// Replenish MP3 buffers
 	mp3PlayerLoop();
 
-	
+
 /*****************************************************************************
  *      XviD PART  Stop
  ****************************************************************************/
@@ -381,7 +382,7 @@ int play_movie (FILE* aviFile) {
 	// Stop MP3
 	mp3PlayerStop(true);
 	mp3PlayerLoop();
-	
+
   	if (dec_handle) {
 	  	status = dec_end();
 		if (status) {
@@ -391,9 +392,9 @@ int play_movie (FILE* aviFile) {
 
  free_all_memory:
 	aviBufferFree();
-	
+
 	iprintf("Finished\n");
-	
+
 	return 0;
 
 }

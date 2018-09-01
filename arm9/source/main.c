@@ -32,26 +32,26 @@
 
 const char *DEFAULTFILE = "fat:/tuna-vids.avi";
 
-int main(int argc, const char* argv[]) 
+int main(int argc, const char* argv[])
 {
 	FILE* aviFile = NULL;
 	const char* aviFileName;
-	
-	
+
+
 	// Exception handling, just in case
 	defaultExceptionHandler();
-	
+
 	// Give 128KiB of VRAM to the ARM7
 	vramSetBankD(VRAM_D_ARM7_0x06000000);
-	
+
 	// Console set up
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 	vramSetBankH(VRAM_H_SUB_BG);
-	SUB_BG0_CR = BG_MAP_BASE(15);
-	BG_PALETTE_SUB[0]=0;   
-	BG_PALETTE_SUB[255]=RGB15(31,31,31); 
-	consoleInitDefault((u16*)SCREEN_BASE_BLOCK_SUB(15), (u16*)CHAR_BASE_BLOCK_SUB(0), 16);
+	REG_BG0CNT_SUB = BG_MAP_BASE(15);
+	BG_PALETTE_SUB[0]=0;
+	BG_PALETTE_SUB[255]=RGB15(31,31,31);
 
+	consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 15, 0, false, true);
 
 	iprintf("\n");
 	iprintf("Tuna-viDS v1.1\n");
@@ -61,8 +61,8 @@ int main(int argc, const char* argv[])
 	iprintf("\n");
 	iprintf("See documentation for a \n");
 	iprintf("full list of credits.\n");
-	
-	powerSET (POWER_ALL_2D);
+
+	powerOn(POWER_ALL_2D);
 	lcdMainOnTop ();
 
 	// File set up
@@ -70,12 +70,12 @@ int main(int argc, const char* argv[])
 		iprintf ("Failed to init FAT\n");
 		return -1;
 	}
-	
+
 	// Video set up
 	vramSetBankA(VRAM_A_LCD);
 	vramSetBankB(VRAM_B_LCD);
 	vramSetBankC(VRAM_C_LCD);
-	
+
 	// Interrupt set up
 	irqInit();
 	irqEnable(IRQ_VBLANK);
@@ -90,16 +90,16 @@ int main(int argc, const char* argv[])
 	} else {
 		aviFileName = DEFAULTFILE;
 	}
-	
+
 	// Load Video
 	aviFile = fopen(aviFileName, "rb");
 	if (!aviFile) {
 		iprintf("Error opening input file\n%s\n%s\n", aviFileName, strerror(errno));
-		return(-1);
+		return -1;
 	}
 
 	// xvid play
 	play_movie (aviFile);
-	
+
 	return 0;
 }

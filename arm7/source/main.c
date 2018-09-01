@@ -19,8 +19,10 @@
 		must not claim that you wrote the original software. If you use
 		this software in a product, an acknowledgment in the product
 		documentation would be appreciated but is not required.
+
 	2.	Altered source versions must be plainly marked as such, and
 		must not be misrepresented as being the original software.
+
 	3.	This notice may not be removed or altered from any source
 		distribution.
 
@@ -35,52 +37,27 @@
 extern char *fake_heap_start;
 extern char *fake_heap_end;
 
-touchPosition first,tempPos;
-
-//---------------------------------------------------------------------------------
-void VcountHandler() {
-//---------------------------------------------------------------------------------
-	static int lastbut = -1;
-	
-	uint16 but=0, x=0, y=0, xpx=0, ypx=0, z1=0, z2=0;
-
-	but = REG_KEYXY;
-
-	if (!( (but ^ lastbut) & (1<<6))) {
- 
-		tempPos = touchReadXY();
-
-		if ( tempPos.x == 0 || tempPos.y == 0 ) {
-			but |= (1 <<6);
-			lastbut = but;
-		} else {
-			x = tempPos.x;
-			y = tempPos.y;
-			xpx = tempPos.px;
-			ypx = tempPos.py;
-			z1 = tempPos.z1;
-			z2 = tempPos.z2;
-		}
-		
-	} else {
-		lastbut = but;
-		but |= (1 <<6);
-	}
-
-	IPC->touchX			= x;
-	IPC->touchY			= y;
-	IPC->touchXpx		= xpx;
-	IPC->touchYpx		= ypx;
-	IPC->touchZ1		= z1;
-	IPC->touchZ2		= z2;
-	IPC->buttons		= but;
-
-}
 
 //---------------------------------------------------------------------------------
 void VblankHandler(void) {
 //---------------------------------------------------------------------------------
+	// Not using Wifi
+	//Wifi_Update();
+}
 
+
+//---------------------------------------------------------------------------------
+void VcountHandler() {
+//---------------------------------------------------------------------------------
+	inputGetAndSend();
+}
+
+volatile bool exitflag = false;
+
+//---------------------------------------------------------------------------------
+void powerButtonCB() {
+//---------------------------------------------------------------------------------
+	exitflag = true;
 }
 
 void toggleBottomLight (void) {
@@ -93,43 +70,63 @@ void toggleBottomLight (void) {
 }
 
 //---------------------------------------------------------------------------------
-int main(int argc, char ** argv) {
+int main() {
 //---------------------------------------------------------------------------------
 	// Wait for VRAM to become available
 	while ((*(vuint8*)0x04000240 & 0x02) == 0);
 	// Clear VRAM
 	memset (VRAM_START, 0, VRAM_END - VRAM_START);
-	
+
 	// Use VRAM as heap
 	fake_heap_start = VRAM_START;
 	fake_heap_end = VRAM_END;
 
-	// read User Settings from firmware
-	readUserSettings();
+	// clear sound registers
+	dmaFillWords(0, (void*)0x04000400, 0x100);
 
-	//enable sound
-	powerON(POWER_SOUND);
+	REG_SOUNDCNT |= SOUND_ENABLE;
 	writePowerManagement(PM_CONTROL_REG, ( readPowerManagement(PM_CONTROL_REG) & ~PM_SOUND_MUTE ) | PM_SOUND_AMP );
-	SOUND_CR = SOUND_ENABLE | SOUND_VOL(0x7F);
+	powerOn(POWER_SOUND);
+
+	readUserSettings();
+	ledBlink(0);
 
 	irqInit();
+	// Start the RTC tracking IRQ
+	initClockIRQ();
+	// Setup FIFO on ARM7. This will sync with the ARM9.
+	fifoInit();
 
-	// Start the RTC tracking IRQ -- Not using RTC, so disable it.
-	// initClockIRQ();
+	// Not using MaxMOD
+	//mmInstall(FIFO_MAXMOD);
 
 	SetYtrigger(80);
+
+	// Not using Wifi or normal libnds sound
+	//installWifiFIFO();
+	//installSoundFIFO();
+
+	installSystemFIFO();
+
 	irqSet(IRQ_VCOUNT, VcountHandler);
-//	irqSet(IRQ_VBLANK, VblankHandler);
+	irqSet(IRQ_VBLANK, VblankHandler);
 
-	irqEnable( IRQ_VBLANK | IRQ_VCOUNT);
+	// IRQ_NETWORK is used by the RTC, other IRQs used above
+	irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_NETWORK);
 
+	setPowerButtonCB(powerButtonCB);
+
+	// TODO: rewrite IPC
 	ipcInit();
 	SoundInit();
 
-	while (1) {
+	// Keep the ARM7 mostly idle
+	while (!exitflag) {
+		if ( 0 == (REG_KEYINPUT & (KEY_SELECT | KEY_START | KEY_L | KEY_R))) {
+			exitflag = true;
+		}
 		SoundLoopStep();
 		swiWaitForVBlank();
 	}
+	return 0;
 }
-
-

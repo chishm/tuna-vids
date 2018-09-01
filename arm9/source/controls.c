@@ -1,8 +1,11 @@
 
+#include <nds.h>
+#include <nds/arm9/console.h>
+#include <string.h>
+
 #include "controls.h"
 #include "controlsImg.h"
 #include "bios_decompress_callback.h"
-#include <string.h>
 
 #define TILE_BASE 0
 #define STATIC_MAP_BASE 22
@@ -69,7 +72,7 @@ ButtonTiles lightButton;
 
 NumeralTiles seekBarBlocks[9];
 
-void vramcpy (void* dest, const void* src, int size) 
+void vramcpy (void* dest, const void* src, int size)
 {
 	u16* destination = (u16*)dest;
 	u16* source = (u16*)src;
@@ -81,29 +84,29 @@ void vramcpy (void* dest, const void* src, int size)
 
 void controlsSetup (void) {
 	int i;
-	
+
 	// Just use BG 0 of the sub screen, with the unused VRAM blocks
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE);
 	vramSetBankH(VRAM_H_SUB_BG);
-	vramSetBankI(VRAM_I_SUB_BG);
-	SUB_BG0_CR = BG_MAP_BASE(STATIC_MAP_BASE) | BG_256_COLOR | BG_TILE_BASE(TILE_BASE) | BG_PRIORITY(2);
-	SUB_BG1_CR = BG_MAP_BASE(OVERLAY_MAP_BASE) | BG_256_COLOR | BG_TILE_BASE(TILE_BASE) | BG_PRIORITY(0);
+	vramSetBankI(VRAM_I_SUB_BG_0x06208000);
+	REG_BG0CNT_SUB = BG_MAP_BASE(STATIC_MAP_BASE) | BG_COLOR_256 | BG_TILE_BASE(TILE_BASE) | BG_PRIORITY(2);
+	REG_BG1CNT_SUB = BG_MAP_BASE(OVERLAY_MAP_BASE) | BG_COLOR_256 | BG_TILE_BASE(TILE_BASE) | BG_PRIORITY(0);
 
 	// Very important - blank tile
 	blankTile = controlsImgMap[BLANK_TILE_POSITION];
-	
+
 	// Copy in palette and tiles
 	vramcpy (&BG_PALETTE_SUB[0], controlsImgPal, controlsImgPalLen);
 	swiDecompressLZSSVram ((void*)controlsImgTiles, (void*)BG_TILE_RAM_SUB(TILE_BASE), 0, &decompressBiosCallback);
 
 	// Initialise background to static image
 	vramcpy (STATIC_MAP, (void*)controlsImgMap, SCREEN_TILE_WIDTH * SCREEN_TILE_HEIGHT * sizeof(controlsImgMap[0]));
-	
+
 	// Clear foreground
 	for (i = 0; i < SCREEN_TILE_WIDTH * SCREEN_TILE_HEIGHT; i++) {
 		OVERLAY_MAP[i] = blankTile;
 	}
-	
+
 	// Get numeral (and related) tiles
 	for (i = 0; i < 10; i++) {
 		numerals[i].top = controlsImgMap[SCREEN_TILE_WIDTH * NUMERAL_TOP_ROW + i];
@@ -117,20 +120,20 @@ void controlsSetup (void) {
 	dotSymbol.bottom = controlsImgMap[SCREEN_TILE_WIDTH * NUMERAL_BOTTOM_ROW + DOT_TILE_OFFSET];
 	colonSymbol.top = controlsImgMap[SCREEN_TILE_WIDTH * NUMERAL_TOP_ROW + COLON_TILE_OFFSET];
 	colonSymbol.bottom = controlsImgMap[SCREEN_TILE_WIDTH * NUMERAL_BOTTOM_ROW + COLON_TILE_OFFSET];
-	
+
 	// Get buttons
 	for (i = 0; i < BUTTON_HEIGHT; i++) {
 		memcpy (playButton.tiles[i], &controlsImgMap[SCREEN_TILE_WIDTH * i + PLAY_TILE_OFFSET], BUTTON_WIDTH*sizeof(u16));
 		memcpy (pauseButton.tiles[i], &controlsImgMap[SCREEN_TILE_WIDTH * i + PAUSE_TILE_OFFSET], BUTTON_WIDTH*sizeof(u16));
 		memcpy (lightButton.tiles[i], &controlsImgMap[SCREEN_TILE_WIDTH * i + LIGHT_TILE_OFFSET], BUTTON_WIDTH*sizeof(u16));
 	}
-	
+
 	// Get seek bar blocks
 	for (i = 0; i < 9; i++) {
 		seekBarBlocks[i].top = controlsImgMap[SCREEN_TILE_WIDTH * SEEK_TOP_ROW + i];
 		seekBarBlocks[i].bottom = controlsImgMap[SCREEN_TILE_WIDTH * SEEK_BOTTOM_ROW + i];
 	}
-	
+
 	updateSeekBar (0);
 	updateSyncDisplay (0);
 	updateTimeDisplay (0, 0, 0);
@@ -140,12 +143,12 @@ void consoleSetup (void) {
 	int i;
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 	vramSetBankH(VRAM_H_SUB_BG);
-	SUB_BG0_CR = BG_MAP_BASE(15);
+	REG_BG0CNT_SUB = BG_MAP_BASE(15);
 	for (i = 0; i < 254; i++) {
-		BG_PALETTE_SUB[i]=0;  
+		BG_PALETTE_SUB[i]=0;
 	}
-	BG_PALETTE_SUB[255]=RGB15(31,31,31); 
-	consoleInitDefault((u16*)SCREEN_BASE_BLOCK_SUB(15), (u16*)CHAR_BASE_BLOCK_SUB(0), 16);
+	BG_PALETTE_SUB[255]=RGB15(31,31,31);
+	consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 15, 0, false, true);
 }
 
 void showPlay (void) {
@@ -168,21 +171,21 @@ void showPause (void) {
 
 void updateSeekBar (int fraction) {
 	int col;
-	
+
 	if (fraction < 0) fraction = 0;
 	if (fraction > 256) fraction = 256;
-	
+
 	for (col = 0; fraction >= TILE_WIDTH && col < SCREEN_TILE_WIDTH; ++col, fraction -= TILE_WIDTH) {
 		OVERLAY_MAP[SEEK_TOP_ROW * SCREEN_TILE_WIDTH + col] = seekBarBlocks[TILE_WIDTH].top;
 		OVERLAY_MAP[SEEK_BOTTOM_ROW * SCREEN_TILE_WIDTH + col] = seekBarBlocks[TILE_WIDTH].bottom;
 	}
-	
+
 	if (col < SCREEN_TILE_WIDTH) {
 		OVERLAY_MAP[SEEK_TOP_ROW * SCREEN_TILE_WIDTH + col] = seekBarBlocks[fraction].top;
 		OVERLAY_MAP[SEEK_BOTTOM_ROW * SCREEN_TILE_WIDTH + col] = seekBarBlocks[fraction].bottom;
 		++col;
 	}
-	
+
 	for ( ; col < SCREEN_TILE_WIDTH; ++col) {
 		OVERLAY_MAP[SEEK_TOP_ROW * SCREEN_TILE_WIDTH + col] = seekBarBlocks[0].top;
 		OVERLAY_MAP[SEEK_BOTTOM_ROW * SCREEN_TILE_WIDTH + col] = seekBarBlocks[0].bottom;
@@ -192,14 +195,14 @@ void updateSeekBar (int fraction) {
 void showNumber (int num, int rightOffset, int width, int decimalPlace, bool showPlus) {
 	int digit;
 	bool negative = false;
-	
+
 	if (num < 0) {
 		negative = true;
 		num = -num;
 	} else if (num == 0) {
 		showPlus = false;
 	}
-	
+
 	do {
 		if (decimalPlace == 0) {
 			OVERLAY_MAP[rightOffset] = dotSymbol.top;
@@ -214,7 +217,7 @@ void showNumber (int num, int rightOffset, int width, int decimalPlace, bool sho
 		-- decimalPlace;
 		-- width;
 	} while (num > 0 && width > 0);
-	
+
 	if (negative) {
 		OVERLAY_MAP[rightOffset] = minusSymbol.top;
 		OVERLAY_MAP[rightOffset + SCREEN_TILE_WIDTH] = minusSymbol.bottom;
@@ -226,7 +229,7 @@ void showNumber (int num, int rightOffset, int width, int decimalPlace, bool sho
 		-- rightOffset;
 		-- width;
 	}
-	
+
 	while (width > 0) {
 		OVERLAY_MAP[rightOffset] = blankTile;
 		OVERLAY_MAP[rightOffset + SCREEN_TILE_WIDTH] = blankTile;
@@ -247,13 +250,13 @@ void showTimePart (int time, int rightOffset) {
 
 void showTime (int time, int rightOffset) {
 	int seconds, minutes, hours;
-	
+
 	seconds = time % 60;
 	time /= 60;
 	minutes = time % 60;
 	time /= 60;
 	hours = time % 10;
-	
+
 	showTimePart (seconds, rightOffset);
 	OVERLAY_MAP[rightOffset - 2] = colonSymbol.top;
 	OVERLAY_MAP[rightOffset - 2 + SCREEN_TILE_WIDTH] = colonSymbol.bottom;

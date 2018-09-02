@@ -9,11 +9,11 @@
 enum Mp3PlayStyle { MP3_ONCE, MP3_LOOP };
 
     // called by ARM7
-void ipcSoundMp3AmountUsed (void);
+void ipcSoundMp3AmountUsed (int amountUsed);
 void ipcSoundMp3FileSeek (void);
 void ipcSoundMp3End (void);
-void ipcSoundMp3Ready (void);
-void ipcSoundMp3Samples (void);
+void ipcSoundMp3Ready (int sampleRate);
+void ipcSoundMp3Samples (int samples);
 
     // called by the user on ARM9
 void mp3PlayerLoop (void);
@@ -26,4 +26,4 @@ void soundMp3End (void);
 void mp3PlayerInit(void);
 bool mp3PlayerHasEnded(void);
 
-#endif 
+#endif

@@ -1,5 +1,6 @@
 
 #include "video.h"
+#include <nds/arm9/video.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -34,7 +35,7 @@ static int vidBuf_videoFramesBehind = 0;
 void vidBuf_CurrentDecodeComplete (void) {
 	u16 oldIME = REG_IME;
 	REG_IME = 0;
-	
+
 	videoPages[vidBuf_currentDecode].readyForDisplay = true;
 	vidBuf_currentDecode++;
 	if (vidBuf_currentDecode >= NUM_VIDEO_PAGES)
@@ -50,14 +51,14 @@ u8* vidBuf_GetNextDecodeBuffer (void) {
 int vidBuf_NumFreeDecodeBuffers (void) {
 	u16 oldIME = REG_IME;
 	REG_IME = 0;
-	
-	int freeDecodeBuffers = NUM_VIDEO_PAGES - 
+
+	int freeDecodeBuffers = NUM_VIDEO_PAGES -
 	(
-		videoPages[0].readyForDisplay + 
-		videoPages[1].readyForDisplay + 
+		videoPages[0].readyForDisplay +
+		videoPages[1].readyForDisplay +
 		videoPages[2].readyForDisplay
 	);
-	
+
 	REG_IME = oldIME;
 
 	return freeDecodeBuffers;
@@ -78,12 +79,12 @@ bool vidBuf_ShowNextFrame (void) {
 bool vidBuf_NumFramesAvailable (void) {
 	u16 oldIME = REG_IME;
 	REG_IME = 0;
-	
-	int usedDecodeBuffers =  
-		videoPages[0].readyForDisplay + 
-		videoPages[1].readyForDisplay + 
+
+	int usedDecodeBuffers =
+		videoPages[0].readyForDisplay +
+		videoPages[1].readyForDisplay +
 		videoPages[2].readyForDisplay;
-	
+
 	REG_IME = oldIME;
 
 	return usedDecodeBuffers;
@@ -115,7 +116,7 @@ void vidBuf_StartVideo (void) {
 	vidBuf_videoFrameCount = 0;
 	vidBuf_vblanks = 0;
 	vidBuf_audioDelay = 0;
-	if (vidBuf_NumFramesAvailable() > 0 && vidBuf_ShowNextFrame()) 
+	if (vidBuf_NumFramesAvailable() > 0 && vidBuf_ShowNextFrame())
 	{
 		vidBuf_videoFrameCount++;
 	}
@@ -130,7 +131,7 @@ void vidBuf_ResetVideo (void) {
 	vidBuf_soundSampleCount = 0;
 	vidBuf_videoFrameCount = 0;
 	vidBuf_vblanks = 0;
-	
+
 	for (i = 0; i < NUM_VIDEO_PAGES; i++) {
 		videoPages[i].readyForDisplay = false;
 		memset (videoPages[i].buffer, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
@@ -145,7 +146,7 @@ void vidBuf_ClearFutureBuffers (void) {
 	vidBuf_currentDecode = vidBuf_currentDisplay + 1;
 	if (vidBuf_currentDecode >= NUM_VIDEO_PAGES)
 		vidBuf_currentDecode = 0;
-	
+
 	for (i = 0; i < NUM_VIDEO_PAGES; i++) {
 		if (i != vidBuf_currentDisplay)
 			videoPages[i].readyForDisplay = false;
@@ -176,15 +177,15 @@ void vidBuf_VblankHandler (void) {
 
 	if (!vidBuf_running)
 		return;
-	
+
 	vidBuf_vblanks++;
-	
-	delay = (int64_t)vidBuf_soundSampleCount * (int64_t)vidBuf_frameRate 
+
+	delay = (int64_t)vidBuf_soundSampleCount * (int64_t)vidBuf_frameRate
 		- (int64_t)(vidBuf_videoFrameCount - vidBuf_audioDelay) * (int64_t)vidBuf_sampleRate * 100;
-	
+
 	vidBuf_videoFramesBehind = (int)delay;
-	
-	if (delay > 0 && vidBuf_NumFramesAvailable() > 0 && vidBuf_ShowNextFrame()) 
+
+	if (delay > 0 && vidBuf_NumFramesAvailable() > 0 && vidBuf_ShowNextFrame())
 	{
 		vidBuf_videoFrameCount++;
 	}

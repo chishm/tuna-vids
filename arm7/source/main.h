@@ -16,6 +16,8 @@ static inline int min(int x, int y)
 	return y + ((x - y) & -(x < y));
 }
 
-void SoundInit();
+void SoundInit(void);
+
+void toggleBottomLight(void);
 
 #endif

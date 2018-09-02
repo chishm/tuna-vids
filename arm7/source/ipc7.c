@@ -1,110 +1,106 @@
 #include "ipc7.h"
+#include "main.h"
 
-const voidFuncPtr msgHandlers[CMDFIFO7_SIZE] =
+static void ipcHandler(int num_bytes, void *userdata)
 {
-	ipcSoundPlay,
-	ipcSoundSeek,
-	ipcSoundPause,
-	ipcSoundStop,
-    ipcSoundVolume,
-	ipcSoundStart,
-	ipcBacklightToggle,
-};
+	CmdFifo7 cmdFifo;
 
-void ipcInit()
-{
-		// Enable FIFO irq
-	irqEnable(IRQ_FIFO_NOT_EMPTY);
-	irqSet(IRQ_FIFO_NOT_EMPTY, ipcHandler);
-		
-		// Enable FIFO RX and TX
-	REG_IPC_FIFO_CR = IPC_FIFO_ENABLE | IPC_FIFO_SEND_CLEAR | IPC_FIFO_RECV_EMPTY | IPC_FIFO_RECV_IRQ;
-}
-
-u32 ipcReceive()
-{
-		// Wait until FIFO has data
-	while(REG_IPC_FIFO_CR & IPC_FIFO_RECV_EMPTY);
-		
-		// Read data
-	return REG_IPC_FIFO_RX;
-}
-
-void ipcSend(u32 sendData)
-{
-		// Saving IME's value
-	u16 oldIME = REG_IME;
-	REG_IME = 0;
-		
-		// No errors present
-	while(REG_IPC_FIFO_CR & IPC_FIFO_ERROR) {
-		REG_IPC_FIFO_CR = IPC_FIFO_ERROR;
+	if (num_bytes < sizeof(cmdFifo.command) || num_bytes >> sizeof(cmdFifo))
+	{
+		// Too little or too much data. This shouldn't happen.
+		return;
 	}
-	
-		// Wait until FIFO has space on queue
-	while(REG_IPC_FIFO_CR & IPC_FIFO_SEND_FULL);
-		
-		// Send away
-	REG_IPC_FIFO_TX = sendData;
-		
-		// Restoring IME's value
-	REG_IME = oldIME;
-}
 
-void ipcHandler()
-{
-	// Handle all received messages
-	while (!(REG_IPC_FIFO_CR & IPC_FIFO_RECV_EMPTY)) {
-		// Receive message from FIFO queue
-		u32 curMsg = ipcReceive();
-		// Execute command according to table
-		msgHandlers[curMsg]();
+	fifoGetDatamsg(CMDFIFO_MP3, sizeof(cmdFifo), (void*)&cmdFifo);
+
+	switch (cmdFifo.command)
+	{
+	case CMDFIFO7_MP3_PLAY:
+		SoundPlayMP3();
+		break;
+	case CMDFIFO7_MP3_SEEK:
+		// Nothing for now
+		break;
+	case CMDFIFO7_MP3_PAUSE:
+		SoundPauseMP3();
+		break;
+	case CMDFIFO7_MP3_STOP:
+		SoundStopPlayback();
+		break;
+	case CMDFIFO7_MP3_VOLUME:
+		SoundVolume(cmdFifo.data.volume.volume);
+		break;
+	case CMDFIFO7_MP3_START:
+		// Play the MP3 buffer
+		SoundStartMP3(
+			cmdFifo.data.start.aviBuffer, cmdFifo.data.start.aviBuffLen,
+			cmdFifo.data.start.aviBufPos, cmdFifo.data.start.aviRemain);
+		break;
+	case CMDFIFO7_BACKLIGHT_TOGGLE:
+		toggleBottomLight();
+		break;
 	}
 }
 
-// ------------------------------- FIFO Functions ---------------------------- //
-
-void ipcSoundPlay()
+void ipcInit(void)
 {
-	SoundPlayMP3();
+	fifoSetDatamsgHandler(CMDFIFO_MP3, ipcHandler, NULL);
 }
 
-void ipcSoundSeek(void)
+void ipcSend_AmountUsed(int amountUsed)
 {
-	// Nothing for now
+	CmdFifo9 cmdFifo;
+
+	cmdFifo.command = CMDFIFO9_MP3_AMOUNTUSED;
+	cmdFifo.data.amountUsed.amountUsed = amountUsed;
+
+	fifoSendDatamsg(
+		CMDFIFO_MP3,
+		offsetof(CmdFifo9, data) + sizeof(cmdFifo.data.amountUsed),
+		(void*)&cmdFifo);
 }
 
-void ipcSoundPause(void)
+void ipcSend_End(void)
 {
-	SoundPauseMP3();
+	CmdFifo9_e command = CMDFIFO9_MP3_END;
+	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
 }
 
-void ipcSoundStop(void)
+void ipcSend_Ready(int sampleRate)
 {
-		// Stop sound playback
-	SoundStopPlayback();
+	CmdFifo9 cmdFifo;
+
+	cmdFifo.command = CMDFIFO9_MP3_READY;
+	cmdFifo.data.ready.sampleRate = sampleRate;
+
+	fifoSendDatamsg(
+		CMDFIFO_MP3,
+		offsetof(CmdFifo9, data) + sizeof(cmdFifo.data.ready),
+		(void*)&cmdFifo);
 }
 
-void ipcSoundVolume(void)
+void ipcSend_Samples(int samples)
 {
-    u32 volume = (u32)ipcReceive();
-    SoundVolume(volume);
+	CmdFifo9 cmdFifo;
+
+	cmdFifo.command = CMDFIFO9_MP3_SAMPLES;
+	cmdFifo.data.samples.samples = samples;
+
+	fifoSendDatamsg(
+		CMDFIFO_MP3,
+		offsetof(CmdFifo9, data) + sizeof(cmdFifo.data.samples),
+		(void*)&cmdFifo);
 }
 
-void ipcSoundStart (void) 
+void ipcSend_Error(u32 error)
 {
-	// Receive arguments
-	u8* aviBuffer = (u8*)ipcReceive();
-	int aviBufLen = (int)ipcReceive();
-	int aviBufPos = (int)ipcReceive();
-	int aviRemain = (int)ipcReceive();
-	
-	// Play the MP3 buffer
-	SoundStartMP3(aviBuffer, aviBufLen, aviBufPos, aviRemain);
-}
+	CmdFifo9 cmdFifo;
 
-extern void toggleBottomLight (void);
+	cmdFifo.command = CMDFIFO9_ERROR;
+	cmdFifo.data.error.error = error;
 
-void ipcBacklightToggle (void) {
-	toggleBottomLight ();
+	fifoSendDatamsg(
+		CMDFIFO_MP3,
+		offsetof(CmdFifo9, data) + sizeof(cmdFifo.data.error),
+		(void*)&cmdFifo);
 }

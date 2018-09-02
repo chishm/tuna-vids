@@ -116,8 +116,10 @@ int main() {
 
 	setPowerButtonCB(powerButtonCB);
 
-	// TODO: rewrite IPC
+	// Communication with ARM9
 	ipcInit();
+
+	// Provide MP3 playback
 	SoundInit();
 
 	// Keep the ARM7 mostly idle

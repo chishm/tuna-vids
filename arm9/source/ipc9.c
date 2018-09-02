@@ -1,74 +1,98 @@
 #include "ipc9.h"
 #include "sound9.h"
 
-void ipcError (void) {
-#ifdef REPORT_ARM7_ERRORS
-	u32 error = ipcReceive();
-	iprintf ("ARM7 error %08X\n", error);
-#endif
-}
-
-const voidFuncPtr msgHandlers[CMDFIFO9_SIZE] =
+static void ipcHandler(int num_bytes, void *userdata)
 {
-    ipcSoundMp3AmountUsed,
-	ipcSoundMp3End,
-	ipcSoundMp3Ready,
-	ipcSoundMp3Samples,
-	
-	ipcError,
-};
+	CmdFifo9 cmdFifo;
 
-void ipcInit()
-{
-		// Enable FIFO irq
-	irqEnable(IRQ_FIFO_NOT_EMPTY);
-	irqSet(IRQ_FIFO_NOT_EMPTY, ipcHandler);
-		
-		// Enable FIFO RX and TX
-	REG_IPC_FIFO_CR = IPC_FIFO_ENABLE | IPC_FIFO_SEND_CLEAR | IPC_FIFO_RECV_EMPTY | IPC_FIFO_RECV_IRQ;
-}
-
-u32 ipcReceive()
-{
-		// Wait until FIFO has data
-	while(REG_IPC_FIFO_CR & IPC_FIFO_RECV_EMPTY);
-		
-		// Read data
-	return REG_IPC_FIFO_RX;
-}
-
-void ipcSend(u32 sendData)
-{
-		// Saving IME's value
-	u16 oldIME = REG_IME;
-	REG_IME = 0;
-		
-		// No errors present
-	while(REG_IPC_FIFO_CR & IPC_FIFO_ERROR) {
-		REG_IPC_FIFO_CR = IPC_FIFO_ERROR;
+	if (num_bytes < sizeof(cmdFifo.command) || num_bytes >> sizeof(cmdFifo))
+	{
+		// Too little or too much data. This shouldn't happen.
+		return;
 	}
-		
-		// Wait until FIFO has space on queue
-	while(REG_IPC_FIFO_CR & IPC_FIFO_SEND_FULL);
-		
-		// Send away
-	REG_IPC_FIFO_TX = sendData;
-		
-		// Restoring IME's value
-	REG_IME = oldIME;
-}
 
-void ipcHandler(void)
-{
-	// Handle all received messages
-	while (!(REG_IPC_FIFO_CR & IPC_FIFO_RECV_EMPTY)) {
-		// Receive message from FIFO queue
-		u32 curMsg = ipcReceive();
-		// Execute command according to table
-		msgHandlers[curMsg]();
+	fifoGetDatamsg(CMDFIFO_MP3, sizeof(cmdFifo), (void*)&cmdFifo);
+
+	switch (cmdFifo.command)
+	{
+	case CMDFIFO9_MP3_AMOUNTUSED:
+		ipcSoundMp3AmountUsed(cmdFifo.data.amountUsed.amountUsed);
+		break;
+	case CMDFIFO9_MP3_END:
+		ipcSoundMp3End();
+		break;
+	case CMDFIFO9_MP3_READY:
+		ipcSoundMp3Ready(cmdFifo.data.ready.sampleRate);
+		break;
+	case CMDFIFO9_MP3_SAMPLES:
+		ipcSoundMp3Samples(cmdFifo.data.samples.samples);
+		break;
+	case CMDFIFO9_ERROR:
+		break;
 	}
 }
 
-void toggleBacklight (void) {
-	ipcSend (CMDFIFO7_BACKLIGHT_TOGGLE);
+void ipcInit(void)
+{
+	fifoSetDatamsgHandler(CMDFIFO_MP3, ipcHandler, NULL);
+}
+
+
+void ipcSend_Play(void)
+{
+	CmdFifo7_e command = CMDFIFO7_MP3_PLAY;
+	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+}
+
+void ipcSend_Seek(void)
+{
+	CmdFifo7_e command = CMDFIFO7_MP3_SEEK;
+	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+}
+
+void ipcSend_Pause(void)
+{
+	CmdFifo7_e command = CMDFIFO7_MP3_PAUSE;
+	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+}
+
+void ipcSend_Stop(void)
+{
+	CmdFifo7_e command = CMDFIFO7_MP3_STOP;
+	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+}
+
+void ipcSend_Volume(u32 volume)
+{
+	CmdFifo7 cmdFifo;
+
+	cmdFifo.command = CMDFIFO7_MP3_VOLUME;
+	cmdFifo.data.volume.volume = volume;
+
+	fifoSendDatamsg(
+		CMDFIFO_MP3,
+		offsetof(CmdFifo7, data) + sizeof(cmdFifo.data.volume),
+		(void*)&cmdFifo);
+}
+
+void ipcSend_Start(u8* aviBuffer, int aviBuffLen, int aviBufPos, int aviRemain)
+{
+	CmdFifo7 cmdFifo;
+
+	cmdFifo.command = CMDFIFO7_MP3_START;
+	cmdFifo.data.start.aviBuffer = aviBuffer;
+	cmdFifo.data.start.aviBuffLen = aviBuffLen;
+	cmdFifo.data.start.aviBufPos = aviBufPos;
+	cmdFifo.data.start.aviRemain = aviRemain;
+
+	fifoSendDatamsg(
+		CMDFIFO_MP3,
+		offsetof(CmdFifo7, data) + sizeof(cmdFifo.data.start),
+		(void*)&cmdFifo);
+}
+
+void ipcSend_BacklightToggle(void)
+{
+	CmdFifo7_e command = CMDFIFO7_BACKLIGHT_TOGGLE;
+	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
 }

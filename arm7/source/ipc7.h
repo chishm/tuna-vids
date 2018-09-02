@@ -1,19 +1,14 @@
-#include "main.h"
-
 #ifndef __FIFO7_H__
 #define __FIFO7_H__
 
-void ipcInit(void);
-void ipcHandler(void);
-u32 ipcReceive(void);
-void ipcSend(u32 sendData);
+#include <nds/ndstypes.h>
 
-void ipcSoundPlay(void);
-void ipcSoundSeek(void);
-void ipcSoundPause(void);
-void ipcSoundStop(void);
-void ipcSoundVolume(void);
-void ipcSoundStart(void);
-void ipcBacklightToggle(void);
+void ipcInit(void);
+
+void ipcSend_AmountUsed(int amountUsed);
+void ipcSend_End(void);
+void ipcSend_Ready(int sampleRate);
+void ipcSend_Samples(int samples);
+void ipcSend_Error(u32 error);
 
 #endif

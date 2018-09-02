@@ -11,8 +11,7 @@ void SoundNextAviChunk (void) {
 	do {
 		mixerInfo.mp3ChunkAddr += mixerInfo.mp3ChunkSize;
 		mixerInfo.aviRemain -= mixerInfo.mp3ChunkSize;
-		ipcSend(CMDFIFO9_MP3_AMOUNTUSED);
-		ipcSend(mixerInfo.mp3ChunkSize);
+		ipcSend_AmountUsed(mixerInfo.mp3ChunkSize);
 		memcpy (&aviChunkHeader, mixerInfo.mp3ChunkAddr, sizeof (AviChunkHeader));
 		// Lists contain chunks, but we're only interested in the chunks inside, so ignore list headers
 		if (aviChunkHeader.fourcc == LIST_ID) {
@@ -109,8 +108,7 @@ void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain)
 //	mixerInfo.curTimer = 0x1000000 / mixerInfo.smpRate;
 	mixerInfo.curTimer = 0xFFB0FF / mixerInfo.smpRate;
 
-	ipcSend(CMDFIFO9_MP3_READY);
-	ipcSend(mixerInfo.smpRate);
+	ipcSend_Ready(mixerInfo.smpRate);
 }
 
 void SoundPlayMP3(void) {
@@ -164,8 +162,7 @@ void SoundLoopStep()
 
 			smpCount += (smpCount < 0) << 16;
 
-			ipcSend(CMDFIFO9_MP3_SAMPLES);
-			ipcSend(smpCount);
+			ipcSend_Samples(smpCount);
 
 			mixerInfo.lstTimer = curTimer;
 
@@ -185,8 +182,7 @@ void SoundLoopStep()
 
 			smpCount += (smpCount < 0) << 16;
 
-			ipcSend(CMDFIFO9_MP3_SAMPLES);
-			ipcSend(smpCount);
+			ipcSend_Samples(smpCount);
 
 			mixerInfo.lstTimer = curTimer;
 
@@ -215,8 +211,7 @@ void SoundLoopStep()
 			mixerInfo.mixState = SNDMIXER_IDLE;
 			mixerInfo.curState = SNDSTATE_IDLE;
 
-			ipcSend(CMDFIFO9_MP3_READY);
-			ipcSend(mixerInfo.smpRate);
+			ipcSend_Ready(mixerInfo.smpRate);
 		} break;
 		case SNDMIXER_STOP: {
 			u8* aid_readPtr = mixerInfo.mp3BufAddr;
@@ -230,7 +225,7 @@ void SoundLoopStep()
 			MP3Decode(mixerInfo.hMP3Decoder, &aid_readPtr, &aid_bytesLeft, mixerInfo.musicBuf, 0);
 			mixerInfo.mixState = SNDMIXER_IDLE;
 			mixerInfo.curState = SNDSTATE_IDLE;
-			ipcSend(CMDFIFO9_MP3_END);
+			ipcSend_End();
 		} break;
 		default:
 			break;
@@ -280,8 +275,7 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 				SoundStopPlayback();
 				mixerInfo.curState = SNDSTATE_ENDOFDATA;
 #ifdef REPORT_ARM7_ERRORS
-				ipcSend(CMDFIFO9_ERROR);
-				ipcSend((0x10000000 - (usedBytes << 24)) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
+				ipcSend_Error((0x10000000 - (usedBytes << 24)) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
 #endif
 				return;
 			}
@@ -293,8 +287,7 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 			// Decode one MP3 frame to the buffer
 			if ((error = MP3Decode(mixerInfo.hMP3Decoder, &aid_readPtr, &aid_bytesLeft, mixerInfo.musicBuf, 0))) {
 #ifdef REPORT_ARM7_ERRORS
-				ipcSend(CMDFIFO9_ERROR);
-				ipcSend((0x20000000 - (error << 24)) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
+				ipcSend_Error((0x20000000 - (error << 24)) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
 #endif
 //				SoundStopPlayback();
 //				mixerInfo.curState = SNDSTATE_ERROR;

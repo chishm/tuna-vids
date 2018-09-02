@@ -8,30 +8,28 @@ static bool doEnd;
 static bool ready;
 static bool playerEnded;
 
-void ipcSoundMp3AmountUsed (void) {
-	amountUsed += ipcReceive();
+void ipcSoundMp3AmountUsed (int amountUsed) {
+	amountUsed += amountUsed;
 }
 
 void ipcSoundMp3End (void) {
 	doEnd = true;
-	playerEnded = true; 
+	playerEnded = true;
 }
 
-void ipcSoundMp3Ready (void) {
-	int sampleRate = ipcReceive();
+void ipcSoundMp3Ready (int sampleRate) {
 	ready = true;
 	vidBuf_SetSoundSampleRate (sampleRate);
 }
 
-void ipcSoundMp3Samples (void) {
-	int samples = ipcReceive();
+void ipcSoundMp3Samples (int samples) {
 	vidBuf_AddSoundSamples (samples);
 }
 
 void mp3PlayerLoop (void) {
 	u16 oldIME = REG_IME;
 	REG_IME = 0;
-	
+
 	if (doEnd) {
 		doEnd = false;
 		/* Stick any finalisation stuff here */
@@ -50,26 +48,20 @@ bool mp3PlayerStart (void) {
 	// Stop all previous playback
 	mp3PlayerStop(false);
 	mp3PlayerLoop();	// Catch any last requests of the ARM7
-	ipcSend(CMDFIFO7_MP3_START);
-	// aviBuffer
-	ipcSend((int)aviBuffer.bufferStart);
-	// aviBufLen
-	ipcSend(AVI_BUFFER_SIZE);
-	// aviBufPos
-	ipcSend(aviBuffer.audioReadPointer - aviBuffer.bufferStart);
-	// aviRemain
-	ipcSend( aviBuffer.moviRemain + (aviBuffer.audioAmountLeft - aviBuffer.videoAmountLeft));
+	ipcSend_Start(aviBuffer.bufferStart, AVI_BUFFER_SIZE,
+		aviBuffer.audioReadPointer - aviBuffer.bufferStart,
+		aviBuffer.moviRemain + (aviBuffer.audioAmountLeft - aviBuffer.videoAmountLeft));
 	return true;
 }
 
 void mp3PlayerPause(void) {
 	ready = false;
-    ipcSend(CMDFIFO7_MP3_PAUSE);
+    ipcSend_Pause();
 }
 
 void mp3PlayerStop(bool waitUntilStopped) {
     playerEnded = false;
-	ipcSend(CMDFIFO7_MP3_STOP);
+	ipcSend_Stop();
 	if (waitUntilStopped) {
 		// Delay until player has stopped
 		while (!playerEnded) {
@@ -89,14 +81,13 @@ bool mp3PlayerPlay(bool delayUntilReady) {
 			return false;
 		}
 	}
-	ipcSend(CMDFIFO7_MP3_PLAY);
+	ipcSend_Play();
 	playerEnded = false;
 	return true;
 }
 
 void mp3PlayerVolume(u32 volume) {
-    ipcSend(CMDFIFO7_MP3_VOLUME);
-    ipcSend(volume);
+	ipcSend_Volume(volume);
 }
 
 bool mp3PlayerHasEnded (void) {

@@ -79,9 +79,10 @@ int main(int argc, const char* argv[])
 	// Interrupt set up
 	irqInit();
 	irqEnable(IRQ_VBLANK);
-	irqSet (IRQ_VBLANK, vidBuf_VblankHandler);
+	irqSet(IRQ_VBLANK, vidBuf_VblankHandler);
 
 	// Communication with ARM7
+	fifoInit();
 	ipcInit();
 
 	// Get file name

@@ -27,21 +27,19 @@ void ipcSoundMp3Samples (int samples) {
 }
 
 void mp3PlayerLoop (void) {
-	u16 oldIME = REG_IME;
-	REG_IME = 0;
-
+	int oldIME = enterCriticalSection();
 	if (doEnd) {
 		doEnd = false;
 		/* Stick any finalisation stuff here */
 	}
-	if (amountUsed > 0) {
-		aviAudioUsedData (amountUsed);
-		amountUsed = 0;
+	int amountUsed_copy = amountUsed;
+	amountUsed = 0;
+	leaveCriticalSection(oldIME);
+
+	if (amountUsed_copy > 0) {
+		aviAudioUsedData (amountUsed_copy);
 	}
-
-	REG_IME = oldIME;
 }
-
 
 bool mp3PlayerStart (void) {
 	ready = false;

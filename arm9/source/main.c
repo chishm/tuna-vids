@@ -26,6 +26,7 @@
 #include <fat.h>
 #include <errno.h>
 
+#include "controls.h"
 #include "ipc9.h"
 #include "video.h"
 #include "player.h"
@@ -44,14 +45,7 @@ int main(int argc, const char* argv[])
 	// Give 128KiB of VRAM to the ARM7
 	vramSetBankD(VRAM_D_ARM7_0x06000000);
 
-	// Console set up
-	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
-	vramSetBankH(VRAM_H_SUB_BG);
-	REG_BG0CNT_SUB = BG_MAP_BASE(15);
-	BG_PALETTE_SUB[0]=0;
-	BG_PALETTE_SUB[255]=RGB15(31,31,31);
-
-	consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 15, 0, false, true);
+	consoleSetup();
 
 	iprintf("\n");
 	iprintf("Tuna-viDS v1.1\n");

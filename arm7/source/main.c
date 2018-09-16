@@ -103,6 +103,8 @@ int main() {
 	initClockIRQ();
 	// Setup FIFO on ARM7. This will sync with the ARM9.
 	fifoInit();
+	// Prepare for touch-screen input
+	touchInit();
 
 	initVramHeap();
 

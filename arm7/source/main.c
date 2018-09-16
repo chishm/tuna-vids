@@ -40,7 +40,7 @@ extern char *fake_heap_end;
 
 
 //---------------------------------------------------------------------------------
-void VblankHandler(void) {
+static void VblankHandler(void) {
 //---------------------------------------------------------------------------------
 	// Not using Wifi
 	//Wifi_Update();
@@ -48,7 +48,7 @@ void VblankHandler(void) {
 
 
 //---------------------------------------------------------------------------------
-void VcountHandler() {
+static void VcountHandler() {
 //---------------------------------------------------------------------------------
 	inputGetAndSend();
 }
@@ -56,7 +56,7 @@ void VcountHandler() {
 volatile bool exitflag = false;
 
 //---------------------------------------------------------------------------------
-void powerButtonCB() {
+static void powerButtonCB() {
 //---------------------------------------------------------------------------------
 	exitflag = true;
 }

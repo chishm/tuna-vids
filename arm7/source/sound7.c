@@ -5,7 +5,7 @@ volatile tMixerInfo mixerInfo = {0};
 
 #define DECODE_AHEAD_LENGTH (mixerInfo.bufSize >> 1)
 
-void SoundNextAviChunk (void) {
+static void SoundNextAviChunk (void) {
 	AviChunkHeader aviChunkHeader;
 
 	// Scan forward in AVI buffer for next audio data chunk

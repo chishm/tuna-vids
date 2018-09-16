@@ -34,7 +34,7 @@ CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -fno-rtti
 
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=ds_arm7.specs -g $(ARCH) -Wl,--nmagic -Wl,-Map,$(notdir $*).map
+LDFLAGS	=	-specs=ds_arm7.specs -g $(ARCH) -Wl,--nmagic
 
 LIBS	:=	-lnds7
 
@@ -109,7 +109,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 $(ARM7ELF)	:	$(OFILES)
 	@echo linking $(notdir $@)
-	@$(LD)  $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+	@$(LD)  $(LDFLAGS) -Wl,-Map,$(notdir $@).map $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 
 
 #---------------------------------------------------------------------------------

@@ -48,7 +48,7 @@ int main(int argc, const char* argv[])
 	consoleSetup();
 
 	iprintf("\n");
-	iprintf("Tuna-viDS v1.1\n");
+	iprintf("Tuna-viDS v1.2\n");
 	iprintf("\n");
 	iprintf("AVI + Xvid + MP3 player by\n");
 	iprintf("Michael Chisholm (Chishm)\n");

@@ -32,6 +32,7 @@
 #include "sound7.h"
 #include "ipc7.h"
 
+#define REG_VRAMSTAT (*(vu8*)0x04000240)
 #define VRAM_START ((char*)0x06000000)
 #define VRAM_END ((char*)0x06020000)
 extern char *fake_heap_start;
@@ -60,6 +61,20 @@ void powerButtonCB() {
 	exitflag = true;
 }
 
+/* Use VRAM as heap for malloc. This must be called before any malloc is done. */
+static void initVramHeap(void)
+{
+	// Wait for VRAM bank D to become available
+	while ((REG_VRAMSTAT & 0x02) == 0);
+
+	// Clear VRAM
+	memset (VRAM_START, 0, VRAM_END - VRAM_START);
+
+	// Use VRAM as heap
+	fake_heap_start = VRAM_START;
+	fake_heap_end = VRAM_END;
+}
+
 void toggleBottomLight (void) {
 	// Toggle lower screen's backlight
 	u16 oldIME = REG_IME;
@@ -72,14 +87,6 @@ void toggleBottomLight (void) {
 //---------------------------------------------------------------------------------
 int main() {
 //---------------------------------------------------------------------------------
-	// Wait for VRAM to become available
-	while ((*(vuint8*)0x04000240 & 0x02) == 0);
-	// Clear VRAM
-	memset (VRAM_START, 0, VRAM_END - VRAM_START);
-
-	// Use VRAM as heap
-	fake_heap_start = VRAM_START;
-	fake_heap_end = VRAM_END;
 
 	// clear sound registers
 	dmaFillWords(0, (void*)0x04000400, 0x100);
@@ -96,6 +103,8 @@ int main() {
 	initClockIRQ();
 	// Setup FIFO on ARM7. This will sync with the ARM9.
 	fifoInit();
+
+	initVramHeap();
 
 	// Not using MaxMOD
 	//mmInstall(FIFO_MAXMOD);

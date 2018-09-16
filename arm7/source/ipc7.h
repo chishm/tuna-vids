@@ -3,7 +3,7 @@
 
 #include <nds/ndstypes.h>
 
-void ipcInit(void);
+bool ipcInit(void);
 
 void ipcSend_AmountUsed(int amountUsed);
 void ipcSend_End(void);

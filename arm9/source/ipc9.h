@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-void ipcInit();
+bool ipcInit();
 
 void ipcSend_Play(void);
 void ipcSend_Seek(void);

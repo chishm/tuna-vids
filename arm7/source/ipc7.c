@@ -60,9 +60,9 @@ static void ipcSendCmd9(CmdFifo9* cmdFifo)
 	}
 }
 
-void ipcInit(void)
+bool ipcInit(void)
 {
-	fifoSetDatamsgHandler(CMDFIFO_MP3, ipcHandler, NULL);
+	return fifoSetDatamsgHandler(CMDFIFO_MP3, ipcHandler, NULL);
 }
 
 void ipcSend_AmountUsed(int amountUsed)

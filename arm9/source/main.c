@@ -86,7 +86,11 @@ int main(int argc, const char* argv[])
 	irqSet(IRQ_VBLANK, vidBuf_VblankHandler);
 
 	// Communication with ARM7
-	ipcInit();
+	if (!ipcInit())
+	{
+		iprintf("Failed to init IPC\n");
+		return -1;
+	}
 
 	// Get file name
 	if (argc >= 2) {

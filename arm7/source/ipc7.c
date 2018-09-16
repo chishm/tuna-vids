@@ -23,23 +23,23 @@ static void ipcHandler(int num_bytes, void *userdata)
 	switch (cmdFifo.command)
 	{
 	case CMDFIFO7_MP3_PLAY:
-		SoundPlayMP3();
+		SoundState_Play();
 		break;
 	case CMDFIFO7_MP3_SEEK:
 		// Nothing for now
 		break;
 	case CMDFIFO7_MP3_PAUSE:
-		SoundPauseMP3();
+		SoundState_Pause();
 		break;
 	case CMDFIFO7_MP3_STOP:
-		SoundStopPlayback();
+		SoundState_Stop();
 		break;
 	case CMDFIFO7_MP3_VOLUME:
-		SoundVolume(cmdFifo.data.volume.volume);
+		SoundState_Volume(cmdFifo.data.volume.volume);
 		break;
 	case CMDFIFO7_MP3_START:
 		// Play the MP3 buffer
-		SoundStartMP3(
+		SoundState_Start(
 			cmdFifo.data.start.aviBuffer, cmdFifo.data.start.aviBuffLen,
 			cmdFifo.data.start.aviBufPos, cmdFifo.data.start.aviRemain);
 		break;

@@ -8,10 +8,21 @@
 
 #define SNDMIXER_BUFFER_SIZE (4 * MAX_NCHAN * MAX_NGRAN * MAX_NSAMP)
 
+// Sound mixer state
+typedef enum
+{
+	SNDMIXER_UNINITIALISED,
+	SNDMIXER_IDLE,
+	SNDMIXER_START,
+	SNDMIXER_PLAY,
+	SNDMIXER_PLAYING,
+	SNDMIXER_PAUSE,
+	SNDMIXER_STOP,
+} sndMixerState;
+
 typedef struct
 {
 	// State
-	sndState curState;
 	sndMixerState mixState;
 		
 	// Buffer info
@@ -33,7 +44,6 @@ typedef struct
 	u8* mp3BufAddr;
     int mp3BufRemain;
 
-	MP3FrameInfo mp3FrameInfo;
 	HMP3Decoder hMP3Decoder;
 		
 	s16	*mixBufferL;
@@ -47,13 +57,18 @@ typedef struct
 // functions
 void SoundLoopStep(void);
 void SoundSetTimer(int period);
-void SoundStopPlayback();
-void SoundVolume(u32 volume);
+
+/* SoundState_* functions are called from FIFO interrupt context. They should
+ * only set the state of the mixer, then allow the SoundLoopStep to take action.
+ */
+void SoundState_Start(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain);
+void SoundState_Play(void);
+void SoundState_Pause(void);
+void SoundState_Stop();
+void SoundState_Volume(u32 volume);
+
 void SoundMix(int smpCount);
 void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount);
-void SoundStartMP3(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain);
-void SoundPlayMP3(void);
-void SoundPauseMP3(void);
 void deinterleaveStereo (s16* streamL, s16* streamR, const u32* inBuffer, int smpCount);
 
 

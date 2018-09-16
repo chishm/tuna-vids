@@ -86,28 +86,4 @@ typedef struct CmdFifo9
 } CmdFifo9;
 
 
-// Sound mixer state
-typedef enum
-{
-	SNDMIXER_IDLE,
-	SNDMIXER_SETUPSTREAM,
-	SNDMIXER_STREAMING,
-	SNDMIXER_PAUSE,
-	SNDMIXER_STOP,
-
-	SNDMIXER_SIZE,
-
-} sndMixerState;
-
-typedef enum
-{
-	SNDSTATE_IDLE,
-	SNDSTATE_PLAY,
-	SNDSTATE_ENDOFDATA,
-	SNDSTATE_ERROR,
-
-	SNDSTATE_SIZE,
-
-} sndState;
-
 #endif

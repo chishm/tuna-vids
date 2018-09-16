@@ -18,7 +18,7 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ---------------------------------------------------------------------------------*/
 #include <nds.h>
-#include <nds/arm9/console.h> //basic print funcionality
+#include <nds/arm9/console.h> //basic print functionality
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>

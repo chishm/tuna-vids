@@ -216,7 +216,7 @@ void SoundLoopStep()
 			mixerInfo.smpPos += smpCount;
 			mixerInfo.smpPos %= mixerInfo.bufSize;
 
-			// Adjust data so that playback starts from the begining of the buffer
+			// Adjust data so that playback starts from the beginning of the buffer
 			if (mixerInfo.smpPos >= DECODE_AHEAD_LENGTH) {
 				int offset = mixerInfo.smpPos - DECODE_AHEAD_LENGTH;
 				memmove (mixerInfo.mixBufferL, mixerInfo.mixBufferL + offset, DECODE_AHEAD_LENGTH);

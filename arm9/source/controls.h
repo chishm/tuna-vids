@@ -20,6 +20,8 @@ void setEndTime (int time);
 void updateTimeDisplay (int time, int avgFps, int behind);
 void updateSyncDisplay (int delay);
 
+void displayError(u32 error, bool isArm9, bool halt);
+
 static inline bool hitCheck (const touchPosition* penPos, const ControlBounds* control, const uint32 keys) {
 	return penPos->px >= control->left && penPos->px <= control->right &&
 		penPos->py >= control->top && penPos->py <= control->bottom && (keys & KEY_TOUCH);

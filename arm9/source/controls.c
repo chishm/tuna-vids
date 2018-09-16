@@ -1,6 +1,7 @@
 
 #include <nds.h>
 #include <nds/arm9/console.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "controls.h"
@@ -281,4 +282,15 @@ void updateTimeDisplay (int time, int avgFps, int behind) {
 
 void updateSyncDisplay (int delay) {
 	showNumber (delay, SYNC_OFFSET, SYNC_DISPLAY_WIDTH, -1, true);
+}
+
+void displayError(u32 error, bool isArm9, bool halt) {
+	consoleSetup();
+	iprintf("Error on ARM%c: 0x%08lx\n", isArm9 ? '9' : '7', error);
+	if (halt)
+	{
+		while (true) {
+			swiWaitForVBlank();
+		}
+	}
 }

@@ -1,14 +1,13 @@
+#include <nds/asminc.h>
 
-.arm                                                                               
-.global deinterleaveStereo
-.func deinterleaveStereo
-
-@ de-interleave a stereo source 
+@ de-interleave a stereo source
 @ Code by Thoduv and ecurtz
 @ r0 = left, r1 = right, r2 = interleaved data, r3 = len
 
-deinterleaveStereo:                                                               
-	stmfd sp!, {r4-r11}                                                                
+.arm
+
+BEGIN_ASM_FUNC deinterleaveStereo
+	stmfd sp!, {r4-r11}
 
 	ands	r4, r3, #7					@ get the 3 low bits of len
 	beq 	loop						@ if 0 jump to the loop
@@ -60,6 +59,5 @@ loop:
 	ldmia sp!, {r4-r11}
 	bx lr
 
-.endfunc
 .pool
 

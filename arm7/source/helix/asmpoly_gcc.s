@@ -33,8 +33,9 @@
 @ *  
 @ * ***** END LICENSE BLOCK ***** */ 
 
-	.GLOBAL xmp3_PolyphaseStereo
-xmp3_PolyphaseStereo:
+#include <nds/asminc.h>
+
+BEGIN_ASM_FUNC xmp3_PolyphaseStereo
 	STMFD    sp!,{r4-r11,lr}
 	SUB      sp,sp,#8
 	STR      r0,[sp,#4]
@@ -384,8 +385,7 @@ LoopPS:
 	ADD      sp,sp,#8
 	LDMFD    sp!,{r4-r11,pc}
 
-	.GLOBAL xmp3_PolyphaseMono
-xmp3_PolyphaseMono:
+BEGIN_ASM_FUNC xmp3_PolyphaseMono
 	STMFD    sp!,{r4-r11,lr}
 	SUB      sp,sp,#8
 	STR      r0,[sp,#4]

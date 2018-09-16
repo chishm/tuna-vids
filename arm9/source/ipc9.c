@@ -1,3 +1,5 @@
+#include "controls.h"
+#include "errors.h"
 #include "ipc9.h"
 #include "sound9.h"
 
@@ -5,13 +7,18 @@ static void ipcHandler(int num_bytes, void *userdata)
 {
 	CmdFifo9 cmdFifo;
 
-	if (num_bytes < sizeof(cmdFifo.command) || num_bytes >> sizeof(cmdFifo))
+	if (num_bytes != sizeof(cmdFifo))
 	{
-		// Too little or too much data. This shouldn't happen.
+		displayError(ERROR_ARM9_FIFO_BUFF_SIZE, true, false);
+		displayError(num_bytes, true, true);
 		return;
 	}
 
-	fifoGetDatamsg(CMDFIFO_MP3, sizeof(cmdFifo), (void*)&cmdFifo);
+	if (fifoGetDatamsg(CMDFIFO_MP3, sizeof(cmdFifo), (u8*)&cmdFifo) != sizeof(cmdFifo))
+	{
+		displayError(ERROR_ARM9_FIFO_RECEIVE, true, true);
+		return;
+	}
 
 	switch (cmdFifo.command)
 	{
@@ -28,7 +35,20 @@ static void ipcHandler(int num_bytes, void *userdata)
 		ipcSoundMp3Samples(cmdFifo.data.samples.samples);
 		break;
 	case CMDFIFO9_ERROR:
+		displayError(cmdFifo.data.error.error, false, true);
 		break;
+	default:
+		displayError(ERROR_ARM9_FIFO_INVALID_COMMAND, true, true);
+		break;
+	}
+}
+
+static void ipcSendCmd7(CmdFifo7* cmdFifo)
+{
+	if (!fifoSendDatamsg(CMDFIFO_MP3, sizeof(CmdFifo7), (u8*)cmdFifo))
+	{
+		displayError(ERROR_ARM9_FIFO_SEND, true, false);
+		displayError(cmdFifo->command, true, true);
 	}
 }
 
@@ -37,62 +57,51 @@ void ipcInit(void)
 	fifoSetDatamsgHandler(CMDFIFO_MP3, ipcHandler, NULL);
 }
 
-
 void ipcSend_Play(void)
 {
-	CmdFifo7_e command = CMDFIFO7_MP3_PLAY;
-	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_MP3_PLAY};
+	ipcSendCmd7(&cmdFifo);
 }
 
 void ipcSend_Seek(void)
 {
-	CmdFifo7_e command = CMDFIFO7_MP3_SEEK;
-	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_MP3_SEEK};
+	ipcSendCmd7(&cmdFifo);
 }
 
 void ipcSend_Pause(void)
 {
-	CmdFifo7_e command = CMDFIFO7_MP3_PAUSE;
-	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_MP3_PAUSE};
+	ipcSendCmd7(&cmdFifo);
 }
 
 void ipcSend_Stop(void)
 {
-	CmdFifo7_e command = CMDFIFO7_MP3_STOP;
-	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_MP3_STOP};
+	ipcSendCmd7(&cmdFifo);
 }
 
 void ipcSend_Volume(u32 volume)
 {
-	CmdFifo7 cmdFifo;
-
-	cmdFifo.command = CMDFIFO7_MP3_VOLUME;
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_MP3_VOLUME};
 	cmdFifo.data.volume.volume = volume;
 
-	fifoSendDatamsg(
-		CMDFIFO_MP3,
-		offsetof(CmdFifo7, data) + sizeof(cmdFifo.data.volume),
-		(void*)&cmdFifo);
+	ipcSendCmd7(&cmdFifo);
 }
 
 void ipcSend_Start(u8* aviBuffer, int aviBuffLen, int aviBufPos, int aviRemain)
 {
-	CmdFifo7 cmdFifo;
-
-	cmdFifo.command = CMDFIFO7_MP3_START;
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_MP3_START};
 	cmdFifo.data.start.aviBuffer = aviBuffer;
 	cmdFifo.data.start.aviBuffLen = aviBuffLen;
 	cmdFifo.data.start.aviBufPos = aviBufPos;
 	cmdFifo.data.start.aviRemain = aviRemain;
 
-	fifoSendDatamsg(
-		CMDFIFO_MP3,
-		offsetof(CmdFifo7, data) + sizeof(cmdFifo.data.start),
-		(void*)&cmdFifo);
+	ipcSendCmd7(&cmdFifo);
 }
 
 void ipcSend_BacklightToggle(void)
 {
-	CmdFifo7_e command = CMDFIFO7_BACKLIGHT_TOGGLE;
-	fifoSendDatamsg(CMDFIFO_MP3, sizeof(command), &command);
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_BACKLIGHT_TOGGLE};
+	ipcSendCmd7(&cmdFifo);
 }

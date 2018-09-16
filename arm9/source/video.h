@@ -15,7 +15,7 @@ typedef struct {
 	int framesBehind;
 } VidBufStats;
 
-extern int vidBuf_vblanks;
+extern volatile int vidBuf_vblanks;
 
 void vidBuf_CurrentDecodeComplete (void);
 u8* vidBuf_GetNextDecodeBuffer (void);

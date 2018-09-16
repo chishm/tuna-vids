@@ -23,14 +23,15 @@ static int vidBuf_verticalOffset = 0;
 static int vidBuf_currentDecode = 0;
 static int vidBuf_currentDisplay = -1;
 static int vidBuf_audioDelay = 0;
-static int vidBuf_sampleRate = 44100;		// Default to a reasonable value (44.1kHz)
+static volatile int vidBuf_sampleRate = 44100;		// Default to a reasonable value (44.1kHz)
 static int vidBuf_frameRate = 1000;			// Default to a reasonable value (10fps)
-static int vidBuf_soundSampleCount = 0;
-static int vidBuf_videoFrameCount = 0;
-int vidBuf_vblanks = 0;
-static int vidBuf_running = false;
+static volatile int vidBuf_soundSampleCount = 0;
+static int volatile vidBuf_videoFrameCount = 0;
+static volatile int vidBuf_running = false;
 
-static int vidBuf_videoFramesBehind = 0;
+static int volatile vidBuf_videoFramesBehind = 0;
+
+volatile int vidBuf_vblanks = 0;
 
 void vidBuf_CurrentDecodeComplete (void) {
 	u16 oldIME = REG_IME;

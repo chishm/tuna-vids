@@ -3,10 +3,10 @@
 #include "video.h"
 #include "avi_buffer.h"
 
-static int amountUsed = 0;
-static bool doEnd;
-static bool ready;
-static bool playerEnded;
+static volatile int amountUsed = 0;
+static volatile bool doEnd;
+static volatile bool ready;
+static volatile bool playerEnded;
 
 void ipcSoundMp3AmountUsed (int amountUsed) {
 	amountUsed += amountUsed;

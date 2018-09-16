@@ -76,13 +76,16 @@ int main(int argc, const char* argv[])
 	vramSetBankB(VRAM_B_LCD);
 	vramSetBankC(VRAM_C_LCD);
 
-	// Interrupt set up
-	irqInit();
-	irqEnable(IRQ_VBLANK);
+	/* Most setup is done in libnds's initSystem() function, like:
+	 * irqInit()
+	 * irqEnable(IRQ_VBLANK)
+	 * fifoInit()
+	 */
+
+	// VBLANK interrupt setup.
 	irqSet(IRQ_VBLANK, vidBuf_VblankHandler);
 
 	// Communication with ARM7
-	fifoInit();
 	ipcInit();
 
 	// Get file name

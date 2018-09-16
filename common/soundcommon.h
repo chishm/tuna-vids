@@ -12,7 +12,7 @@
 // Commands the ARM7 can receive
 typedef enum
 {
-	CMDFIFO7_MP3_PLAY,
+	CMDFIFO7_MP3_PLAY = 1,
 	CMDFIFO7_MP3_SEEK,
 	CMDFIFO7_MP3_PAUSE,
 	CMDFIFO7_MP3_STOP,
@@ -46,7 +46,7 @@ typedef struct CmdFifo7
 // Commands the ARM9 can receive
 typedef enum
 {
-	CMDFIFO9_MP3_AMOUNTUSED,
+	CMDFIFO9_MP3_AMOUNTUSED = 1,
 	CMDFIFO9_MP3_END,
 	CMDFIFO9_MP3_READY,
 	CMDFIFO9_MP3_SAMPLES,

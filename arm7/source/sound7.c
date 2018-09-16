@@ -1,4 +1,5 @@
 #include <nds/timers.h>
+#include "errors.h"
 #include "sound7.h"
 
 volatile tMixerInfo mixerInfo = {0};
@@ -294,9 +295,7 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
             usedBytes = MP3FindSyncWord(mixerInfo.mp3BufAddr, mixerInfo.mp3BufRemain);
 			if(usedBytes < 0) {
 				SoundState_Stop();
-#ifdef REPORT_ARM7_ERRORS
-				ipcSend_Error((0x10000000 - (usedBytes << 24)) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
-#endif
+				ipcSend_Error((ERROR_MP3_END_OF_FILE << 28) | (-usedBytes << 24) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
 				return;
 			}
 			SoundUsedAmount(usedBytes);
@@ -307,10 +306,8 @@ void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount)
 			// Decode one MP3 frame to the buffer
             error = MP3Decode(mixerInfo.hMP3Decoder, &aid_readPtr, &aid_bytesLeft, mixerInfo.musicBuf, 0);
 			if (error < 0) {
-#ifdef REPORT_ARM7_ERRORS
-				ipcSend_Error((0x20000000 - (error << 24)) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
-#endif
 				SoundState_Stop();
+				ipcSend_Error((ERROR_MP3_DECODE << 28) | (-error << 24) | (mixerInfo.mp3BufAddr - mixerInfo.aviBufStart));
 				return;
 			}
 

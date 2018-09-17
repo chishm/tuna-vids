@@ -183,7 +183,6 @@ static void seekVideo (int offset, bool paused) {
 		vidBuf_StopVideo();
 	}
 	mp3PlayerStop(true);
-	mp3PlayerLoop();
 	// Clean up buffers
 	vidBuf_ClearFutureBuffers();
 	flush_video();

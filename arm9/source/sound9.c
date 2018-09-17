@@ -45,7 +45,7 @@ bool mp3PlayerStart (void) {
 	ready = false;
 	// Stop all previous playback
 	mp3PlayerStop(true);
-	mp3PlayerLoop();	// Catch any last requests of the ARM7
+	amountUsed = 0;
 	ipcSend_Start(aviBuffer.bufferStart, AVI_BUFFER_SIZE,
 		aviBuffer.audioReadPointer - aviBuffer.bufferStart,
 		aviBuffer.moviRemain + (aviBuffer.audioAmountLeft - aviBuffer.videoAmountLeft));

@@ -56,7 +56,6 @@ typedef struct
 
 // functions
 void SoundLoopStep(void);
-void SoundSetTimer(int period);
 
 /* SoundState_* functions are called from FIFO interrupt context. They should
  * only set the state of the mixer, then allow the SoundLoopStep to take action.
@@ -67,9 +66,6 @@ void SoundState_Pause(void);
 void SoundState_Stop();
 void SoundState_Volume(u32 volume);
 
-void SoundMix(int smpCount);
-void SoundMixCallback(s16* streamL, s16* streamR, u32 smpCount);
 void deinterleaveStereo (s16* streamL, s16* streamR, const u32* inBuffer, int smpCount);
-
 
 #endif

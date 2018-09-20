@@ -1,10 +1,10 @@
+#ifndef __SOUND7_H__
+#define __SOUND7_H__
+
 #include "main.h"
 #include "helix/mp3dec.h"
 #include "../../common/soundcommon.h"
 #include "avi_headers.h"
-
-#ifndef __SOUND7_H__
-#define __SOUND7_H__
 
 #define SNDMIXER_BUFFER_SIZE (4 * MAX_NCHAN * MAX_NGRAN * MAX_NSAMP)
 
@@ -24,15 +24,15 @@ typedef struct
 {
 	// State
 	sndMixerState mixState;
-		
+
 	// Buffer info
 	u32 bufSize;
-		
+
 	// Sample info
 	u32 smpPos, smpRate;
 	s32 curTimer, lstTimer;
 	int numChannels;
-		
+
 	// AVI buffer
 	u8* aviBufStart;
 	int aviBufSize;
@@ -45,11 +45,11 @@ typedef struct
     int mp3BufRemain;
 
 	HMP3Decoder hMP3Decoder;
-		
+
 	s16	*mixBufferL;
 	s16	*mixBufferR;
 	s16 *musicBuf;
-		
+
 	int nMusicBuf, nMusicBufStart;
 	int totalUsed;
 } tMixerInfo;

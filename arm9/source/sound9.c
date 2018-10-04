@@ -8,8 +8,8 @@ static volatile bool doEnd;
 static volatile bool ready;
 static volatile bool playerEnded;
 
-void ipcSoundMp3AmountUsed (int amountUsed) {
-	amountUsed += amountUsed;
+void ipcSoundMp3AmountUsed (int reportedAmountUsed) {
+	amountUsed += reportedAmountUsed;
 }
 
 void ipcSoundMp3End (void) {

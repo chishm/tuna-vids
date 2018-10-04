@@ -105,3 +105,9 @@ void ipcSend_BacklightToggle(void)
 	CmdFifo7 cmdFifo = {.command = CMDFIFO7_BACKLIGHT_TOGGLE};
 	ipcSendCmd7(&cmdFifo);
 }
+
+void ipcSend_Exit(void)
+{
+	CmdFifo7 cmdFifo = {.command = CMDFIFO7_EXIT};
+	ipcSendCmd7(&cmdFifo);
+}

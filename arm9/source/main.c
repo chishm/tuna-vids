@@ -103,5 +103,7 @@ int main(int argc, const char* argv[])
 	// xvid play
 	play_movie (aviFile);
 
+	ipcSend_Exit();
+
 	return 0;
 }

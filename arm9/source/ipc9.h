@@ -16,6 +16,7 @@ void ipcSend_Stop(void);
 void ipcSend_Volume(u32 volume);
 void ipcSend_Start(u8* aviBuffer, int aviBuffLen, int aviBufPos, int aviRemain);
 void ipcSend_BacklightToggle(void);
+void ipcSend_Exit(void);
 
 static inline void toggleBacklight (void) {
 	ipcSend_BacklightToggle();

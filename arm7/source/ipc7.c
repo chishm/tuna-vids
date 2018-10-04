@@ -46,6 +46,9 @@ static void ipcHandler(int num_bytes, void *userdata)
 	case CMDFIFO7_BACKLIGHT_TOGGLE:
 		toggleBottomLight();
 		break;
+	case CMDFIFO7_EXIT:
+		exitMainLoop();
+		break;
 	default:
 		ipcSend_Error(ERROR_ARM7_FIFO_INVALID_COMMAND);
 		break;

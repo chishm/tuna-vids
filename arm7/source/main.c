@@ -84,6 +84,11 @@ void toggleBottomLight (void) {
 	REG_IME = oldIME;
 }
 
+void exitMainLoop(void)
+{
+	exitflag = true;
+}
+
 //---------------------------------------------------------------------------------
 int main() {
 //---------------------------------------------------------------------------------
@@ -137,9 +142,16 @@ int main() {
 	while (!exitflag) {
 		if ( 0 == (REG_KEYINPUT & (KEY_SELECT | KEY_START | KEY_L | KEY_R))) {
 			exitflag = true;
+			SoundState_Stop();
 		}
 		SoundLoopStep();
 		swiWaitForVBlank();
 	}
+
+	// Stop sound before exiting, in case something is still playing
+	SCHANNEL_CR(0) = 0;
+	SCHANNEL_CR(1) = 0;
+	REG_SOUNDCNT = 0;
+
 	return 0;
 }

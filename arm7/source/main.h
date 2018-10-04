@@ -19,5 +19,6 @@ static inline int min(int x, int y)
 void SoundInit(void);
 
 void toggleBottomLight(void);
+void exitMainLoop(void);
 
 #endif

@@ -19,6 +19,7 @@ typedef enum
     CMDFIFO7_MP3_VOLUME,
 	CMDFIFO7_MP3_START,
 	CMDFIFO7_BACKLIGHT_TOGGLE,
+	CMDFIFO7_EXIT,
 } CmdFifo7_e;
 
 struct CmdFifo7_Mp3_Volume

@@ -60,13 +60,14 @@ typedef struct
 // functions
 void SoundLoopStep(void);
 
-/* SoundState_* functions are called from FIFO interrupt context. They should
+/* SoundState_* functions may be called from FIFO interrupt context. They should
  * only set the state of the mixer, then allow the SoundLoopStep to take action.
  */
 void SoundState_Start(u8* aviBuffer, int aviBufLen, int aviBufPos, int aviRemain);
 void SoundState_Play(void);
 void SoundState_Pause(void);
-void SoundState_Stop();
+void SoundState_Finishing(void);
+void SoundState_Stop(void);
 void SoundState_Volume(u32 volume);
 
 void deinterleaveStereo (s16* streamL, s16* streamR, const u32* inBuffer, int smpCount);

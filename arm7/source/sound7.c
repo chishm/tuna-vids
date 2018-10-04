@@ -22,6 +22,10 @@ static void SoundNextAviChunk (void) {
 		if (aviChunkHeader.fourcc == LIST_ID) {
 			aviChunkHeader.size = sizeof(AviListHeader)-sizeof(AviChunkHeader);
 		}
+		if (aviChunkHeader.size > mixerInfo.aviBufSize)
+		{
+			ipcSend_Error(ERROR_MP3_CHUNK_SIZE);
+		}
 		mixerInfo.mp3ChunkSize = ((aviChunkHeader.size + 1) & ~1) + sizeof(AviChunkHeader);
 		mixerInfo.mp3BufAddr = mixerInfo.mp3ChunkAddr + sizeof(AviChunkHeader);
 		mixerInfo.mp3BufRemain = aviChunkHeader.size;

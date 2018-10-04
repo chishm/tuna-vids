@@ -4,15 +4,6 @@
 #include <string.h>
 #include <malloc.h>
 
-//#define UNCACHED_BUFFER
-/*
-When using the data buffer, load data into UNCACHED memory, 
-then invalidate the cache for the loaded area. This will keep 
-the data valid for the ARM7 and simply force the ARM9 to take a 
-cache miss when it first accesses the data.
-Alternatively, use CACHED memory as normal, and flush it after
-data is read from disc, to update the ARM7's audio data stream.
-*/
 
 AviBuffer aviBuffer = {0};
 
@@ -40,21 +31,15 @@ int aviBufferLoadChunk (void) {
 		return 0;
 	}
 	if (aviBuffer.writePointer < aviBuffer.bufferStart + AVI_CHUNK_SIZE) {
+		/* Copy the start chunk of the buffer to the end, to allow some space
+		 * for reads that run past AVI_BUFFER_SIZE before being wrapped. */
 		memcpy (aviBuffer.bufferStart + AVI_BUFFER_SIZE, aviBuffer.bufferStart, AVI_CHUNK_SIZE);
-#ifdef UNCACHED_BUFFER
-		DC_InvalidateRange (aviBuffer.videoReadStart + AVI_BUFFER_SIZE, len); 
-#else
-		DC_FlushRange (aviBuffer.videoReadStart + AVI_BUFFER_SIZE, len); 
-#endif
+		DC_FlushRange (aviBuffer.bufferStart + AVI_BUFFER_SIZE, len);
 	}
-	// Invalidate data cache for loaded chunk, so that the ARM9 will load the correct data
-	// The data is always read to uncached memory, for the benefit of the ARM7
-#ifdef UNCACHED_BUFFER
-	DC_InvalidateRange (aviBuffer.videoReadStart + writeOffset, len);
-#else
-	DC_FlushRange (aviBuffer.videoReadStart + writeOffset, len);
-#endif
-	
+	/* The data is in cached memory, so it must be flushed to main memory for
+	 * the ARM7 to be able to access it. */
+	DC_FlushRange (aviBuffer.writePointer, len);
+
 	// Wrap the write pointer back to the beginning of the buffer if needed
 	aviBuffer.writePointer += len;
 	if (aviBuffer.writePointer >= aviBuffer.bufferStart + AVI_BUFFER_SIZE) {
@@ -271,10 +256,6 @@ bool aviBufferInit (FILE* aviFile, int *frameWidth, int *frameHeight, int *frame
 	if (!aviBuffer.bufferStart) return false;
 	aviBuffer.videoReadPointer = aviBuffer.videoReadStart = aviBuffer.bufferStart;
 
-#ifdef UNCACHED_BUFFER
-	// Use uncached RAM for buffer
-	aviBuffer.bufferStart = (u8*) ((int)(aviBuffer.bufferStart) | 0x00400000);
-#endif
 	aviBuffer.writePointer = aviBuffer.bufferStart;
 	aviBuffer.audioReadPointer = aviBuffer.bufferStart;
 	

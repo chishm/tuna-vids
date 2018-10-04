@@ -17,6 +17,7 @@ typedef enum
 	SNDMIXER_PLAY,
 	SNDMIXER_PLAYING,
 	SNDMIXER_PAUSE,
+	SNDMIXER_FINISHING,
 	SNDMIXER_STOP,
 } sndMixerState;
 
@@ -31,6 +32,8 @@ typedef struct
 	// Sample info
 	u32 smpPos, smpRate;
 	s32 curTimer, lstTimer;
+	// Number of unplayed samples available in the mix buffers
+	s32 smpAvail;
 	int numChannels;
 
 	// AVI buffer

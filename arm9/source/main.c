@@ -96,12 +96,19 @@ int main(int argc, const char* argv[])
 	// Load Video
 	aviFile = fopen(aviFileName, "rb");
 	if (!aviFile) {
-		iprintf("Error opening input file\n%s\n%s\n", aviFileName, strerror(errno));
+		iprintf("Error opening AVI file\n%s\n%s\n", aviFileName, strerror(errno));
 		return -1;
 	}
 
 	// xvid play
 	play_movie (aviFile);
+
+	if (fclose(aviFile) != 0)
+	{
+		consoleSetup();
+		iprintf("Error closing AVI file\n%s\n", strerror(errno));
+		return -1;
+	}
 
 	ipcSend_Exit();
 

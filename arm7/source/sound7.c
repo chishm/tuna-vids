@@ -1,6 +1,7 @@
 #include <nds/timers.h>
 #include "errors.h"
 #include "sound7.h"
+#include "utils.h"
 
 volatile tMixerInfo mixerInfo = {0};
 

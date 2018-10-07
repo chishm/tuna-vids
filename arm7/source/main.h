@@ -11,11 +11,6 @@
 #include "sound7.h"
 #include "ipc7.h"
 
-static inline int min(int x, int y)
-{
-	return y + ((x - y) & -(x < y));
-}
-
 void SoundInit(void);
 
 void toggleBottomLight(void);

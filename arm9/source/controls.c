@@ -276,7 +276,6 @@ void setEndTime (int time) {
 void updateTimeDisplay (int time, int avgFps, int behind) {
 	showTime (time, CUR_TIME_OFFSET);
 	showNumber (avgFps, AVG_FPS_OFFSET, TIME_DISPLAY_WIDTH, CENTIHERTZ_DECIMAL, false);
-//	showNumber (curFps, CUR_FPS_OFFSET, TIME_DISPLAY_WIDTH, CENTIHERTZ_DECIMAL, false);
 	showNumber (behind, BEHIND_OFFSET, TIME_DISPLAY_WIDTH, -1, true);
 }
 

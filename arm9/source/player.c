@@ -385,14 +385,14 @@ int play_movie (FILE* aviFile) {
   	if (dec_handle) {
 	  	status = dec_end();
 		if (status) {
-			iprintf("decore RELEASE problem return value %d\n", status);
+			iprintf("decore RELEASE problem, return value %d\n", status);
 		}
 	}
 
  free_all_memory:
 	aviBufferFree();
 
-	iprintf("Finished\n");
+	iprintf("Finished playback\n");
 
 	return 0;
 

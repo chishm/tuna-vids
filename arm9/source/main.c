@@ -105,10 +105,11 @@ int main(int argc, const char* argv[])
 
 	if (fclose(aviFile) != 0)
 	{
-		consoleSetup();
 		iprintf("Error closing AVI file\n%s\n", strerror(errno));
 		return -1;
 	}
+
+	iprintf("Exiting\n");
 
 	ipcSend_Exit();
 

@@ -1,10 +1,7 @@
-#include "../../common/soundcommon.h"
+#ifndef SOUND9_H_
+#define SOUND9_H_
 
-#ifndef __SOUND9_H__
-#define __SOUND9_H__
-
-#include <nds.h>
-
+#include <nds/ndstypes.h>
 
 enum Mp3PlayStyle { MP3_ONCE, MP3_LOOP };
 
@@ -26,4 +23,4 @@ void soundMp3End (void);
 void mp3PlayerInit(void);
 bool mp3PlayerHasEnded(void);
 
-#endif
+#endif // SOUND9_H_

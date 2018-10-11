@@ -1,4 +1,3 @@
-
 #include <nds.h>
 #include <nds/arm9/console.h>
 #include <stdio.h>
@@ -53,13 +52,15 @@
 
 typedef u16 (*BgMap)[SCREEN_TILE_WIDTH];
 
-typedef struct {
-	u16	top;
-	u16	bottom;
+typedef struct
+{
+    u16 top;
+    u16 bottom;
 } NumeralTiles;
 
-typedef struct {
-	u16 tiles[BUTTON_HEIGHT][BUTTON_WIDTH];
+typedef struct
+{
+    u16 tiles[BUTTON_HEIGHT][BUTTON_WIDTH];
 } ButtonTiles;
 
 NumeralTiles numerals[10];
@@ -303,28 +304,32 @@ void showTime(int time, int rightOffset)
     setMapNumeral(rightOffset - 6, &numerals[hours]);
 }
 
-void setEndTime (int time) {
-	showTime (0, START_TIME_OFFSET);
-	showTime (time, END_TIME_OFFSET);
+void setEndTime(int time)
+{
+    showTime(0, START_TIME_OFFSET);
+    showTime(time, END_TIME_OFFSET);
 }
 
-void updateTimeDisplay (int time, int avgFps, int behind) {
-	showTime (time, CUR_TIME_OFFSET);
-	showNumber (avgFps, AVG_FPS_OFFSET, TIME_DISPLAY_WIDTH, CENTIHERTZ_DECIMAL, false);
-	showNumber (behind, BEHIND_OFFSET, TIME_DISPLAY_WIDTH, -1, true);
+void updateTimeDisplay(int time, int avgFps, int behind)
+{
+    showTime(time, CUR_TIME_OFFSET);
+    showNumber(avgFps, AVG_FPS_OFFSET, TIME_DISPLAY_WIDTH, CENTIHERTZ_DECIMAL, false);
+    showNumber(behind, BEHIND_OFFSET, TIME_DISPLAY_WIDTH, -1, true);
 }
 
-void updateSyncDisplay (int delay) {
-	showNumber (delay, SYNC_OFFSET, SYNC_DISPLAY_WIDTH, -1, true);
+void updateSyncDisplay(int delay)
+{
+    showNumber(delay, SYNC_OFFSET, SYNC_DISPLAY_WIDTH, -1, true);
 }
 
-void displayError(u32 error, bool isArm9, bool halt) {
-	consoleSetup();
-	iprintf("Error on ARM%c: 0x%08lx\n", isArm9 ? '9' : '7', error);
-	if (halt)
-	{
-		while (true) {
-			swiWaitForVBlank();
-		}
-	}
+void displayError(u32 error, bool isArm9, bool halt)
+{
+    consoleSetup();
+    iprintf("Error on ARM%c: 0x%08lx\n", isArm9 ? '9' : '7', error);
+
+    if (halt) {
+        while (true) {
+            swiWaitForVBlank();
+        }
+    }
 }

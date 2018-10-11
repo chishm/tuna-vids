@@ -1,21 +1,9 @@
-
-#ifndef BIOS_DECOMPRESS_CALLBACK_H
-#define BIOS_DECOMPRESS_CALLBACK_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef BIOS_DECOMPRESS_CALLBACK_H_
+#define BIOS_DECOMPRESS_CALLBACK_H_
 
 #include <nds/bios.h>
 #include <nds/ndstypes.h>
 
 extern TDecompressionStream decompressBiosCallback;
 
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // BIOS_DECOMPRESS_CALLBACK_H
-
+#endif // BIOS_DECOMPRESS_CALLBACK_H_

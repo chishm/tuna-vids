@@ -1,5 +1,5 @@
-#ifndef __SOUND7_H__
-#define __SOUND7_H__
+#ifndef SOUND7_H_
+#define SOUND7_H_
 
 #include "main.h"
 #include "helix/mp3dec.h"
@@ -11,50 +11,50 @@
 // Sound mixer state
 typedef enum
 {
-	SNDMIXER_UNINITIALISED,
-	SNDMIXER_IDLE,
-	SNDMIXER_START,
-	SNDMIXER_PLAY,
-	SNDMIXER_PLAYING,
-	SNDMIXER_PAUSE,
-	SNDMIXER_FINISHING,
-	SNDMIXER_STOP,
+    SNDMIXER_UNINITIALISED,
+    SNDMIXER_IDLE,
+    SNDMIXER_START,
+    SNDMIXER_PLAY,
+    SNDMIXER_PLAYING,
+    SNDMIXER_PAUSE,
+    SNDMIXER_FINISHING,
+    SNDMIXER_STOP,
 } sndMixerState;
 
 typedef struct
 {
-	// State
-	sndMixerState mixState;
+    // State
+    sndMixerState mixState;
 
-	// Buffer info
-	u32 bufSize;
+    // Buffer info
+    u32 bufSize;
 
-	// Sample info
-	u32 smpPos, smpRate;
-	s32 curTimer, lstTimer;
-	// Number of unplayed samples available in the mix buffers
-	s32 smpAvail;
-	int numChannels;
+    // Sample info
+    u32 smpPos, smpRate;
+    s32 curTimer, lstTimer;
+    // Number of unplayed samples available in the mix buffers
+    s32 smpAvail;
+    int numChannels;
 
-	// AVI buffer
-	u8* aviBufStart;
-	int aviBufSize;
-	int aviRemain;
-	// Current chunk within the buffer
-	u8* mp3ChunkAddr;
-	int	mp3ChunkSize;
-	// Data within the chunk
-	u8* mp3BufAddr;
+    // AVI buffer
+    u8* aviBufStart;
+    int aviBufSize;
+    int aviRemain;
+    // Current chunk within the buffer
+    u8* mp3ChunkAddr;
+    int mp3ChunkSize;
+    // Data within the chunk
+    u8* mp3BufAddr;
     int mp3BufRemain;
 
-	HMP3Decoder hMP3Decoder;
+    HMP3Decoder hMP3Decoder;
 
-	s16	*mixBufferL;
-	s16	*mixBufferR;
-	s16 *musicBuf;
+    s16 *mixBufferL;
+    s16 *mixBufferR;
+    s16 *musicBuf;
 
-	int nMusicBuf, nMusicBufStart;
-	int totalUsed;
+    int nMusicBuf, nMusicBufStart;
+    int totalUsed;
 } tMixerInfo;
 
 // functions
@@ -70,6 +70,6 @@ void SoundState_Finishing(void);
 void SoundState_Stop(void);
 void SoundState_Volume(u32 volume);
 
-void deinterleaveStereo (s16* streamL, s16* streamR, const u32* inBuffer, int smpCount);
+void deinterleaveStereo(s16* streamL, s16* streamR, const u32* inBuffer, int smpCount);
 
-#endif
+#endif // SOUND7_H_

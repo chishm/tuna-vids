@@ -28,130 +28,142 @@
 
 ---------------------------------------------------------------------------------*/
 #include <nds.h>
-#include "../../common/soundcommon.h"
+#include <string.h>
+
+#include "soundcommon.h"
 #include "sound7.h"
 #include "ipc7.h"
 
 #define REG_VRAMSTAT (*(vu8*)0x04000240)
 #define VRAM_START ((char*)0x06000000)
 #define VRAM_END ((char*)0x06020000)
+
 extern char *fake_heap_start;
 extern char *fake_heap_end;
-
-
-//---------------------------------------------------------------------------------
-static void VblankHandler(void) {
-//---------------------------------------------------------------------------------
-	// Not using Wifi
-	//Wifi_Update();
-}
-
-
-//---------------------------------------------------------------------------------
-static void VcountHandler() {
-//---------------------------------------------------------------------------------
-	inputGetAndSend();
-}
-
 volatile bool exitflag = false;
 
-//---------------------------------------------------------------------------------
-static void powerButtonCB() {
-//---------------------------------------------------------------------------------
-	exitflag = true;
+static void VblankHandler(void)
+{
+    // Not using Wifi
+    //Wifi_Update();
+}
+
+static void VcountHandler(void)
+{
+    inputGetAndSend();
+}
+
+static void powerButtonCB(void)
+{
+    exitflag = true;
 }
 
 /* Use VRAM as heap for malloc. This must be called before any malloc is done. */
 static void initVramHeap(void)
 {
-	// Wait for VRAM bank D to become available
-	while ((REG_VRAMSTAT & 0x02) == 0);
+    // Wait for VRAM bank D to become available
+    while ((REG_VRAMSTAT & 0x02) == 0) {
+        // Busy wait loop
+    }
 
-	// Clear VRAM
-	memset (VRAM_START, 0, VRAM_END - VRAM_START);
+    // Clear VRAM
+    memset(VRAM_START, 0, VRAM_END - VRAM_START);
 
-	// Use VRAM as heap
-	fake_heap_start = VRAM_START;
-	fake_heap_end = VRAM_END;
+    // Use VRAM as heap
+    fake_heap_start = VRAM_START;
+    fake_heap_end = VRAM_END;
 }
 
-void toggleBottomLight (void) {
-	// Toggle lower screen's backlight
-	u16 oldIME = REG_IME;
-	REG_IME = 0;
-	u8 oldPowerReg = readPowerManagement (PM_CONTROL_REG);
-	writePowerManagement (PM_CONTROL_REG, oldPowerReg ^ PM_BACKLIGHT_BOTTOM);
-	REG_IME = oldIME;
+static void powerOnSound(void)
+{
+    u16 oldIME = enterCriticalSection();
+
+    REG_SOUNDCNT |= SOUND_ENABLE;
+
+    int oldPowerReg = readPowerManagement(PM_CONTROL_REG);
+    writePowerManagement(PM_CONTROL_REG,
+        (oldPowerReg & ~PM_SOUND_MUTE) | PM_SOUND_AMP);
+
+    powerOn(POWER_SOUND);
+
+    leaveCriticalSection(oldIME);
+}
+
+void toggleBottomLight(void)
+{
+    u16 oldIME = enterCriticalSection();
+
+    // Toggle lower screen's backlight
+    int oldPowerReg = readPowerManagement(PM_CONTROL_REG);
+    writePowerManagement(PM_CONTROL_REG, oldPowerReg ^ PM_BACKLIGHT_BOTTOM);
+
+    leaveCriticalSection(oldIME);
 }
 
 void exitMainLoop(void)
 {
-	exitflag = true;
+    exitflag = true;
 }
 
-//---------------------------------------------------------------------------------
-int main() {
-//---------------------------------------------------------------------------------
+int main(void)
+{
+    // clear sound registers
+    dmaFillWords(0, (void*) 0x04000400, 0x100);
 
-	// clear sound registers
-	dmaFillWords(0, (void*)0x04000400, 0x100);
+    powerOnSound();
 
-	REG_SOUNDCNT |= SOUND_ENABLE;
-	writePowerManagement(PM_CONTROL_REG, ( readPowerManagement(PM_CONTROL_REG) & ~PM_SOUND_MUTE ) | PM_SOUND_AMP );
-	powerOn(POWER_SOUND);
+    readUserSettings();
+    ledBlink(0);
 
-	readUserSettings();
-	ledBlink(0);
+    irqInit();
+    // Start the RTC tracking IRQ
+    initClockIRQ();
+    // Setup FIFO on ARM7. This will sync with the ARM9.
+    fifoInit();
+    // Prepare for touch-screen input
+    touchInit();
 
-	irqInit();
-	// Start the RTC tracking IRQ
-	initClockIRQ();
-	// Setup FIFO on ARM7. This will sync with the ARM9.
-	fifoInit();
-	// Prepare for touch-screen input
-	touchInit();
+    initVramHeap();
 
-	initVramHeap();
+    // Not using MaxMOD
+    //mmInstall(FIFO_MAXMOD);
 
-	// Not using MaxMOD
-	//mmInstall(FIFO_MAXMOD);
+    SetYtrigger(80);
 
-	SetYtrigger(80);
+    // Not using Wifi or normal libnds sound
+    //installWifiFIFO();
+    //installSoundFIFO();
 
-	// Not using Wifi or normal libnds sound
-	//installWifiFIFO();
-	//installSoundFIFO();
+    installSystemFIFO();
 
-	installSystemFIFO();
+    irqSet(IRQ_VCOUNT, VcountHandler);
+    irqSet(IRQ_VBLANK, VblankHandler);
 
-	irqSet(IRQ_VCOUNT, VcountHandler);
-	irqSet(IRQ_VBLANK, VblankHandler);
+    // IRQ_NETWORK is used by the RTC, other IRQs used above
+    irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_NETWORK);
 
-	// IRQ_NETWORK is used by the RTC, other IRQs used above
-	irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_NETWORK);
+    setPowerButtonCB(powerButtonCB);
 
-	setPowerButtonCB(powerButtonCB);
+    // Communication with ARM9
+    ipcInit();
 
-	// Communication with ARM9
-	ipcInit();
+    // Provide MP3 playback
+    SoundInit();
 
-	// Provide MP3 playback
-	SoundInit();
+    // Keep the ARM7 mostly idle
+    while (!exitflag) {
+        if (0 == (REG_KEYINPUT & (KEY_SELECT | KEY_START | KEY_L | KEY_R))) {
+            exitflag = true;
+            SoundState_Stop();
+        }
+        SoundLoopStep();
+        swiWaitForVBlank();
+    }
 
-	// Keep the ARM7 mostly idle
-	while (!exitflag) {
-		if ( 0 == (REG_KEYINPUT & (KEY_SELECT | KEY_START | KEY_L | KEY_R))) {
-			exitflag = true;
-			SoundState_Stop();
-		}
-		SoundLoopStep();
-		swiWaitForVBlank();
-	}
+    // Stop sound before exiting, in case something is still playing
+    SCHANNEL_CR(0) = 0;
+    SCHANNEL_CR(1) = 0;
+    REG_SOUNDCNT = 0;
 
-	// Stop sound before exiting, in case something is still playing
-	SCHANNEL_CR(0) = 0;
-	SCHANNEL_CR(1) = 0;
-	REG_SOUNDCNT = 0;
-
-	return 0;
+    return 0;
 }

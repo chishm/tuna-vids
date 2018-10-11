@@ -6,8 +6,7 @@
 
 static inline int min(int x, int y)
 {
-	return x < y ? x : y;
+    return x < y ? x : y;
 }
 
-
-#endif /* COMMON_UTILS_H_ */
+#endif // COMMON_UTILS_H_

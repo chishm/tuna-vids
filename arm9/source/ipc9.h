@@ -1,5 +1,5 @@
-#ifndef __FIFO9_H__
-#define __FIFO9_H__
+#ifndef IPC9_H_
+#define IPC9_H_
 
 #include <nds.h>
 
@@ -18,12 +18,13 @@ void ipcSend_Start(u8* aviBuffer, int aviBuffLen, int aviBufPos, int aviRemain);
 void ipcSend_BacklightToggle(void);
 void ipcSend_Exit(void);
 
-static inline void toggleBacklight (void) {
-	ipcSend_BacklightToggle();
+static inline void toggleBacklight(void)
+{
+    ipcSend_BacklightToggle();
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // IPC9_H_

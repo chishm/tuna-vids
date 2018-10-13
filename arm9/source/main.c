@@ -29,6 +29,7 @@
 #include "controls.h"
 #include "ipc9.h"
 #include "player.h"
+#include "version.h"
 #include "video.h"
 
 const char *DEFAULTFILE = "fat:/tuna-vids.avi";
@@ -47,7 +48,7 @@ int main(int argc, const char* argv[])
     consoleSetup();
 
     iprintf("\n");
-    iprintf("Tuna-viDS v1.2\n");
+    iprintf("Tuna-viDS v" VERSION_STRING "\n");
     iprintf("\n");
     iprintf("AVI + Xvid + MP3 player by\n");
     iprintf("Michael Chisholm (Chishm)\n");

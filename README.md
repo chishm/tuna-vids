@@ -54,15 +54,14 @@ Usage
 
 1. Install NDS Hombrew Menu to your flash card.
 2. Copy `tuna-vids.nds` to the `nds` folder on your flash card.
-3. Put converted AVI files on your flash card.
-4. Create a `<name>.argv` file for each AVI file with the following content:
+3. Create a file called `avi.ext` in the `nds` folder on your flash card with
+   the following contents:
 
    ```
-   tuna-vids.nds </path/to/video.avi>
+   /nds/tuna-vids.nds
    ```
 
-   Here `<name>.argv` is a text file that has the extension `.argv` (not
-   `.txt`) and `</path/to/video.avi>` is the full path the AVI file.
+4. Put converted AVI files on your flash card.
 
 Acknowledgements
 ================

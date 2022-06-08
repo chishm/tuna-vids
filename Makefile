@@ -8,6 +8,8 @@ endif
 export TARGET	:=	$(shell basename $(CURDIR))
 export TOPDIR	:=	$(CURDIR)
 
+include $(DEVKITARM)/ds_rules
+
 # specify a directory which contains the nitro filesystem
 # this is relative to the Makefile
 NITRO_FILES	:=

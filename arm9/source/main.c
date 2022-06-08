@@ -32,7 +32,7 @@
 #include "version.h"
 #include "video.h"
 
-const char *DEFAULTFILE = "fat:/tuna-vids.avi";
+const char *DEFAULTFILE = "/tuna-vids.avi";
 
 int main(int argc, const char* argv[])
 {

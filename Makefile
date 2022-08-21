@@ -16,7 +16,7 @@ NITRO_FILES	:=
 
 # Version information
 export VERSION_MAJOR	:= 1
-export VERSION_MINOR	:= 2
+export VERSION_MINOR	:= 3
 export VERSTRING	:=	$(VERSION_MAJOR).$(VERSION_MINOR)
 
 # These set the information text in the nds file
